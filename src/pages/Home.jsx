@@ -45,6 +45,22 @@ function Home() {
         >
           Host an Invite
         </button>
+        <button
+          onClick={() => navigate("/host/events")}
+          style={{
+            padding: "14px 24px",
+            border: "1px solid #8b5cf6",
+            borderRadius: "12px",
+            background: "white",
+            color: "#8b5cf6",
+            fontSize: "1rem",
+            fontWeight: "600",
+            cursor: "pointer",
+            marginTop: "12px",
+          }}
+        >
+          Host Dashboard
+        </button>
           <div
           style={{
             marginTop: "2rem",

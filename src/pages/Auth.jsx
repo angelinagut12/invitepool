@@ -40,7 +40,7 @@ function Auth() {
 
         if (error) throw error;
 
-        navigate("/create");
+        navigate("/host/events");
       } else {
         const { error } = await supabase.auth.signUp({
           email: formData.email,

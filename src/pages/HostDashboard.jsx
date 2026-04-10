@@ -158,6 +158,7 @@ async function fetchDashboardData() {
           <button onClick={() => navigate(`/edit/event/${event.id}`)}>
             Edit Event
          </button>
+         <button onClick={() => navigate("/host/events")}>Back to All Events</button>
           {copyMessage && (
             <p style={{ marginTop: "0.75rem", color: "green" }}>{copyMessage}</p>
           )}
@@ -242,15 +243,25 @@ async function fetchDashboardData() {
                     ? new Date(guest.created_at).toLocaleString()
                     : "Unknown"}
                 </p>
+
+                <button
+                  onClick={() => handleDeleteRsvp(guest.id)}
+                  style={{
+                    marginTop: "0.75rem",
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete RSVP
+                </button>
               </div>
  
             ))}  
-            <button
-                onClick={() => handleDeleteRsvp(guest.id)}
-                style={{ marginTop: "0.75rem" }}
-                >
-                Delete RSVP
-            </button>
+
           </div>
         )}
       </div>

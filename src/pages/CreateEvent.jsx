@@ -108,7 +108,7 @@ async function handleSubmit(e) {
     return;
   }
 
-  navigate(`/host/event/${data.id}`);
+  navigate("/host/events");
 }
 function handleChange(event) {
   const { name, value } = event.target;
