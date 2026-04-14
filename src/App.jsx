@@ -6,6 +6,7 @@ import HostDashboard from "./pages/HostDashboard";
 import EditEvent from "./pages/EditEvent";
 import Auth from "./pages/Auth";
 import HostEvents from "./pages/HostEvents";
+import EditRsvp from "./pages/EditRsvp";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/edit/event/:id" element={<EditEvent />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/host/events" element={<HostEvents />} />
+        <Route path="/rsvp/edit/:token" element={<EditRsvp />} />
       </Routes>
     </BrowserRouter>
   );

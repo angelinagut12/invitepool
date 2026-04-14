@@ -12,25 +12,24 @@ function EventPage() {
   const [rsvps, setRsvps] = useState([]);
   const [enteredCode, setEnteredCode] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [codeError, setCodeError] = useState("");
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpSuccess, setRsvpSuccess] = useState("");
+  const [editLink, setEditLink] = useState("");
+
+  const [existingRsvpFound, setExistingRsvpFound] = useState(false);
+  const [existingEditToken, setExistingEditToken] = useState("");
+  const [linkRequestSuccess, setLinkRequestSuccess] = useState("");
 
   const [rsvpData, setRsvpData] = useState({
     guestName: "",
+    email: "",
+    phone: "",
     attending: "yes",
     guestCount: 1,
     message: "",
+    smsOptIn: false,
   });
-
-  useEffect(() => {
-    const submitted = localStorage.getItem(`rsvp_submitted_${id}`);
-    if (submitted) {
-      setHasSubmitted(true);
-      setRsvpSuccess("Your RSVP has already been submitted.");
-    }
-  }, [id]);
 
   useEffect(() => {
     fetchEvent();
@@ -56,7 +55,7 @@ function EventPage() {
   async function fetchRsvps() {
     const { data, error } = await supabase
       .from("rsvps")
-      .select("*")
+      .select("id, guest_name, attending, guest_count, message, created_at")
       .eq("event_id", id)
       .order("created_at", { ascending: false });
 
@@ -68,26 +67,60 @@ function EventPage() {
   }
 
   function handleRsvpChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setRsvpData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
     setRsvpError("");
+    setLinkRequestSuccess("");
   }
 
   async function handleRsvpSubmit(e) {
     e.preventDefault();
     setRsvpError("");
     setRsvpSuccess("");
+    setEditLink("");
+    setExistingRsvpFound(false);
+    setExistingEditToken("");
+
+    const trimmedEmail = rsvpData.email.trim().toLowerCase();
+    const editToken = crypto.randomUUID();
+
+    const { data: existingRsvp, error: existingError } = await supabase
+      .from("rsvps")
+      .select("id, edit_token")
+      .eq("event_id", id)
+      .eq("email", trimmedEmail)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("Error checking existing RSVP:", existingError);
+      setRsvpError("There was a problem checking your RSVP.");
+      return;
+    }
+
+    if (existingRsvp) {
+      setExistingRsvpFound(true);
+      setExistingEditToken(existingRsvp.edit_token || "");
+      return;
+    }
 
     const { error } = await supabase.from("rsvps").insert([
       {
         event_id: id,
         guest_name: rsvpData.guestName,
+        email: trimmedEmail,
+        phone: rsvpData.phone?.trim() || null,
         attending: rsvpData.attending === "yes",
         guest_count: Number(rsvpData.guestCount),
         message: rsvpData.message,
+        sms_opt_in: rsvpData.smsOptIn,
+        sms_opt_in_at: rsvpData.smsOptIn
+          ? new Date().toISOString()
+          : null,
+        edit_token: editToken,
+        edit_token_created_at: new Date().toISOString(),
       },
     ]);
 
@@ -97,19 +130,26 @@ function EventPage() {
       return;
     }
 
-    localStorage.setItem(`rsvp_submitted_${id}`, "true");
-    setHasSubmitted(true);
     setRsvpSuccess("Your RSVP has been submitted.");
+    setEditLink(`${window.location.origin}/rsvp/edit/${editToken}`);
     fetchRsvps();
 
     setRsvpData({
       guestName: "",
+      email: "",
+      phone: "",
       attending: "yes",
       guestCount: 1,
       message: "",
+      smsOptIn: false,
     });
   }
-
+  async function handleRequestNewEditLink() {
+    setRsvpError("");
+    setLinkRequestSuccess(
+      "We found your RSVP. Email sending will be the next step we add for sending a fresh edit link."
+    );
+  }
   function handleUnlockSubmit(e) {
     e.preventDefault();
 
@@ -364,7 +404,53 @@ function EventPage() {
           </div>
         )}
 
-        {hasSubmitted ? (
+        {existingRsvpFound && (
+          <div
+            style={{
+              background: "#fff7ed",
+              color: "#9a3412",
+              border: "1px solid #fdba74",
+              padding: "16px",
+              borderRadius: "12px",
+              marginBottom: "1rem",
+            }}
+          >
+            <h3 style={{ marginBottom: "0.5rem" }}>Looks like you already RSVP’d</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Need to make changes to your response?
+            </p>
+
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button type="button" onClick={handleRequestNewEditLink}>
+                Send Me a New Edit Link
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setExistingRsvpFound(false);
+                  setExistingEditToken("");
+                  setLinkRequestSuccess("");
+                  setRsvpData((prev) => ({ ...prev, email: "" }));
+                }}
+                style={{
+                  background: "#e5e7eb",
+                  color: "#111827",
+                }}
+              >
+                Use a Different Email
+              </button>
+            </div>
+
+            {linkRequestSuccess && (
+              <p style={{ marginTop: "1rem", fontSize: "0.95rem" }}>
+                {linkRequestSuccess}
+              </p>
+            )}
+          </div>
+        )}
+
+        {rsvpSuccess && (
           <div
             style={{
               background: "#ecfdf5",
@@ -372,13 +458,35 @@ function EventPage() {
               border: "1px solid #bbf7d0",
               padding: "12px",
               borderRadius: "10px",
-              marginTop: "1rem",
+              marginBottom: "1rem",
               fontSize: "0.95rem",
             }}
           >
-            {rsvpSuccess || "Your RSVP has already been submitted."}
+            <p style={{ marginBottom: editLink ? "0.75rem" : 0 }}>{rsvpSuccess}</p>
+
+            {editLink && (
+              <div>
+                <p style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
+                  Save this private RSVP edit link:
+                </p>
+                <a
+                  href={editLink}
+                  style={{ color: "#166534", wordBreak: "break-all" }}
+                >
+                  {editLink}
+                </a>
+
+                <div style={{ marginTop: "0.75rem" }}>
+                  <a href={editLink}>
+                    <button type="button">Edit My RSVP</button>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
+        )}
+
+        {!existingRsvpFound && (
           <form
             onSubmit={handleRsvpSubmit}
             style={{ display: "grid", gap: "1rem" }}
@@ -392,8 +500,64 @@ function EventPage() {
                 value={rsvpData.guestName}
                 onChange={handleRsvpChange}
                 required
-                style={{ width: "100%", padding: "12px", marginTop: "6px", boxSizing: "border-box" }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
               />
+            </div>
+
+            <div>
+              <label>Email</label>
+              <br />
+              <input
+                type="email"
+                name="email"
+                value={rsvpData.email}
+                onChange={handleRsvpChange}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div>
+              <label>Phone (optional)</label>
+              <br />
+              <input
+                type="tel"
+                name="phone"
+                value={rsvpData.phone}
+                onChange={handleRsvpChange}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                <input
+                  type="checkbox"
+                  name="smsOptIn"
+                  checked={rsvpData.smsOptIn}
+                  onChange={handleRsvpChange}
+                  style={{ marginTop: "4px" }}
+                />
+                <span>
+                  I agree to receive text updates about this event, including reminders and important changes.
+                  Message frequency varies. Message and data rates may apply. Reply STOP to opt out.
+                </span>
+              </label>
             </div>
 
             <div>
@@ -403,7 +567,12 @@ function EventPage() {
                 name="attending"
                 value={rsvpData.attending}
                 onChange={handleRsvpChange}
-                style={{ width: "100%", padding: "12px", marginTop: "6px", boxSizing: "border-box" }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
               >
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
@@ -418,7 +587,12 @@ function EventPage() {
                 value={rsvpData.message}
                 onChange={handleRsvpChange}
                 rows="4"
-                style={{ width: "100%", padding: "12px", marginTop: "6px", boxSizing: "border-box" }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
               />
             </div>
 
@@ -431,7 +605,12 @@ function EventPage() {
                 min="1"
                 value={rsvpData.guestCount}
                 onChange={handleRsvpChange}
-                style={{ width: "100%", padding: "12px", marginTop: "6px", boxSizing: "border-box" }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
               />
             </div>
 
