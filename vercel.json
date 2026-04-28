@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 {
   "rewrites": [
     {
@@ -6,13 +6,4 @@
       "destination": "/index.html"
     }
   ]
-=======
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
->>>>>>> 89393c1 (Initial commit with email system)
 }
