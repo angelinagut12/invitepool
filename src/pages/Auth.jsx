@@ -370,165 +370,192 @@ function Auth() {
   }
 
   return (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background: "#f6f2fb",
+      padding: "2rem",
+    }}
+  >
     <div
       style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "#f7f7fb",
+        width: "100%",
+        maxWidth: "420px",
+        background: "#fff",
         padding: "2rem",
+        borderRadius: "20px",
+        boxShadow: "0 6px 18px rgba(80, 60, 100, 0.08)",
       }}
     >
-      <div
+      <h2
         style={{
-          width: "100%",
-          maxWidth: "420px",
-          background: "white",
-          padding: "2rem",
-          borderRadius: "20px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          marginBottom: "0.5rem",
+          textAlign: "center",
+          color: "#6f627d",
         }}
       >
-        <h2 style={{ marginBottom: "0.5rem", textAlign: "center" }}>
-          {isLogin ? "Host Login" : "Create Host Account"}
-        </h2>
+        {isLogin ? "Host Login" : "Create Host Account"}
+      </h2>
 
-        <p
+      <p
+        style={{
+          textAlign: "center",
+          color: "#9b8daa",
+          marginBottom: "1.5rem",
+        }}
+      >
+        {isLogin
+          ? "Log in to manage your events."
+          : "Create an account to host and manage invites."}
+      </p>
+
+      {errorMessage && (
+        <div
           style={{
-            textAlign: "center",
-            color: "#666",
-            marginBottom: "1.5rem",
+            background: "#fef2f2",
+            color: "#b91c1c",
+            border: "1px solid #fecaca",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "1rem",
+            fontSize: "0.9rem",
           }}
         >
-          {isLogin
-            ? "Log in to manage your events."
-            : "Create an account to host and manage invites."}
-        </p>
+          {errorMessage}
+        </div>
+      )}
 
-        {errorMessage && (
-          <div
+      {successMessage && (
+        <div
+          style={{
+            background: "#ecfdf5",
+            color: "#166534",
+            border: "1px solid #bbf7d0",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "1rem",
+            fontSize: "0.9rem",
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
+        <div>
+          <label style={{ color: "#6f627d", fontWeight: "500" }}>
+            Email
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
             style={{
-              background: "#fef2f2",
-              color: "#b91c1c",
-              border: "1px solid #fecaca",
+              width: "100%",
               padding: "12px",
+              marginTop: "6px",
               borderRadius: "10px",
-              marginBottom: "1rem",
-              fontSize: "0.95rem",
+              border: "1px solid #d8cde6",
+              background: "#faf9ff",
+              boxSizing: "border-box",
             }}
-          >
-            {errorMessage}
-          </div>
-        )}
+          />
+        </div>
 
-        {successMessage && (
-          <div
+        <div>
+          <label style={{ color: "#6f627d", fontWeight: "500" }}>
+            Password
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
             style={{
-              background: "#ecfdf5",
-              color: "#166534",
-              border: "1px solid #bbf7d0",
+              width: "100%",
               padding: "12px",
+              marginTop: "6px",
               borderRadius: "10px",
-              marginBottom: "1rem",
-              fontSize: "0.95rem",
+              border: "1px solid #d8cde6",
+              background: "#faf9ff",
+              boxSizing: "border-box",
             }}
-          >
-            {successMessage}
-          </div>
-        )}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
-          <div>
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                marginTop: "6px",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          <div>
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                marginTop: "6px",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          <div style={{ textAlign: "right" }}>
-            <button
-              type="button"
-              onClick={handleResetPassword}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#8b5cf6",
-                cursor: "pointer",
-                fontSize: "0.95rem",
-                padding: 0,
-                margin: 0,
-              }}
-            >
-              Forgot Password?
-            </button>
-          </div>
-
-          <button type="submit" disabled={loading}>
-            {loading
-              ? "Please wait..."
-              : isLogin
-              ? "Log In"
-              : "Create Account"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: "1rem", textAlign: "center" }}>
-          {isLogin ? "Need an account?" : "Already have an account?"}{" "}
+        <div style={{ textAlign: "right" }}>
           <button
             type="button"
-            onClick={() => {
-              setIsLogin((prev) => !prev);
-              setErrorMessage("");
-              setSuccessMessage("");
-            }}
+            onClick={handleResetPassword}
             style={{
               background: "none",
               border: "none",
               color: "#8b5cf6",
               cursor: "pointer",
-              fontWeight: "600",
-              padding: 0,
-              margin: 0,
+              fontSize: "0.9rem",
+              fontWeight: "500",
             }}
           >
-            {isLogin ? "Sign up" : "Log in"}
+            Forgot Password?
           </button>
-        </p>
-      </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            background: "#8b5cf6",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            padding: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          {loading
+            ? "Please wait..."
+            : isLogin
+            ? "Log In"
+            : "Create Account"}
+        </button>
+      </form>
+
+      <p
+        style={{
+          marginTop: "1.2rem",
+          textAlign: "center",
+          color: "#6f627d",
+        }}
+      >
+        {isLogin ? "Need an account?" : "Already have an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setIsLogin((prev) => !prev);
+            setErrorMessage("");
+            setSuccessMessage("");
+          }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#8b5cf6",
+            cursor: "pointer",
+            fontWeight: "600",
+          }}
+        >
+          {isLogin ? "Sign up" : "Log in"}
+        </button>
+      </p>
     </div>
-  );
+  </div>
+);
 }
 
 >>>>>>> 89393c1 (Initial commit with email system)
