@@ -69,7 +69,7 @@ function Home() {
             color: "#777",
           }}
         >
-          © {new Date().getFullYear()} InvitePool by Angelina Gutierrez
+          © {new Date().getFullYear()} InvitePool by Angelina Race
         </div>
       </div>
 

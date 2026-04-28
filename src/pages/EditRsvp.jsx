@@ -12,7 +12,6 @@ function EditRsvp() {
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpSuccess, setRsvpSuccess] = useState("");
   const [eventTitle, setEventTitle] = useState("");
-
   const [rsvpId, setRsvpId] = useState(null);
 
   const [rsvpData, setRsvpData] = useState({
@@ -45,7 +44,6 @@ function EditRsvp() {
           guest_count,
           message,
           sms_opt_in,
-          event_id,
           events (
             event_title
           )
@@ -82,11 +80,14 @@ function EditRsvp() {
 
   function handleRsvpChange(e) {
     const { name, value, type, checked } = e.target;
+
     setRsvpData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
     setRsvpError("");
+    setRsvpSuccess("");
   }
 
   async function handleUpdateRsvp(e) {
@@ -147,6 +148,7 @@ function EditRsvp() {
         }}
       >
         <h1 style={{ marginBottom: "0.5rem" }}>Edit RSVP</h1>
+
         <p style={{ color: "#666", marginBottom: "1.5rem" }}>
           Update your RSVP for {eventTitle}.
         </p>

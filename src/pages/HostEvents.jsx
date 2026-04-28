@@ -2,6 +2,103 @@ import { useEffect, useState } from "react";
 import { supabase } from "../components/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 
+
+if (!document.getElementById("host-theme")) {
+  const style = document.createElement("style");
+  style.id = "host-theme";
+  style.textContent = `
+    .host-shell {
+      min-height: 100vh;
+      background: #f6f2fb;
+      padding: 2rem 1.5rem;
+    }
+
+    .host-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .host-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .host-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: #6f627d;
+      margin: 0;
+    }
+
+    .host-btn {
+      background: #8d7f9b;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .host-btn:hover {
+      background: #6f627d;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(141,127,155,0.25);
+    }
+
+    .host-card {
+      background: #fbf8fd;
+      border: 1px solid #e8dff0;
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: 0.2s;
+    }
+
+    .host-card:hover {
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+
+    .host-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: #6f627d;
+      margin-bottom: 0.4rem;
+    }
+
+    .host-text {
+      font-family: 'Inter', sans-serif;
+      color: #7c6f88;
+      font-size: 0.9rem;
+    }
+
+    .host-actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .host-btn-ghost {
+      border: 1px solid #d8cde6;
+      background: white;
+      color: #6f627d;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .host-btn-ghost:hover {
+      background: #f4eff9;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export default function HostEvents() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
@@ -45,74 +142,65 @@ export default function HostEvents() {
   }
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <h1>My Events</h1>
-        <button onClick={() => navigate("/create")}>Create New Event</button>
-      </div>
+    <div className="host-shell">
+      <div className="host-container">
 
-      {events.length === 0 ? (
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "16px",
-            padding: "1.5rem",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-          }}
-        >
-          <p>You have not created any events yet.</p>
+        <div className="host-header">
+          <h1 className="host-title">My Events</h1>
+          <button
+            className="host-btn"
+            onClick={() => navigate("/create")}
+          >
+            + Create Event
+          </button>
         </div>
-      ) : (
-        <div style={{ display: "grid", gap: "1rem" }}>
-          {events.map((event) => (
-            <div
-              key={event.id}
-              style={{
-                background: "#fff",
-                borderRadius: "16px",
-                padding: "1.5rem",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-              }}
-            >
-              <h2 style={{ marginBottom: "0.5rem" }}>
-                {event.event_title || "Untitled Event"}
-              </h2>
 
-              {event.event_date && (
-                <p><strong>Date:</strong> {event.event_date}</p>
-              )}
+        {events.length === 0 ? (
+          <div className="host-card">
+            <p className="host-text">
+              You haven’t created any events yet.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "1rem" }}>
+            {events.map((event) => (
+              <div key={event.id} className="host-card">
 
-              {event.location && (
-                <p><strong>Location:</strong> {event.location}</p>
-              )}
+                <h2 className="host-card-title">
+                  {event.event_title || "Untitled Event"}
+                </h2>
 
-              <div
-                style={{
-                  marginTop: "1rem",
-                  display: "flex",
-                  gap: "0.75rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <Link to={`/host/event/${event.id}`}>
-                  <button>Manage Event</button>
-                </Link>
+                {event.event_date && (
+                  <p className="host-text">
+                    <strong>Date:</strong> {event.event_date}
+                  </p>
+                )}
 
-                <Link to={`/event/${event.id}`}>
-                  <button>View Public Page</button>
-                </Link>
+                {event.location && (
+                  <p className="host-text">
+                    <strong>Location:</strong> {event.location}
+                  </p>
+                )}
+
+                <div className="host-actions">
+                  <Link to={`/host/event/${event.id}`}>
+                    <button className="host-btn">
+                      Manage
+                    </button>
+                  </Link>
+
+                  <Link to={`/event/${event.id}`}>
+                    <button className="host-btn-ghost">
+                      View Invite
+                    </button>
+                  </Link>
+                </div>
+
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
