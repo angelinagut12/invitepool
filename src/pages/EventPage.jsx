@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
 import Footer from "../components/Footer";
 import { sendEmail } from "../utils/sendEmail";
+import Navbar from "../components/Navbar";
 
 /* ─── Inject fonts + global styles once ─── */
 if (!document.getElementById("ep-fonts")) {
@@ -474,6 +475,8 @@ function EventPage() {
   /* ════════════ MAIN PAGE ════════════ */
   return (
     <div className="ep-shell ep-animate" style={{ background: event.background_color || "#f4f4f5" }}>
+      <Navbar />
+
       <div className="ep-card">
 
         <a

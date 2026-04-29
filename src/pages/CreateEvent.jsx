@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateEvent.css";
 import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 
 export default function CreateEvent() {
   const [formData, setFormData] = useState({
@@ -82,41 +83,56 @@ export default function CreateEvent() {
       imageUrl = publicUrlData.publicUrl;
     }
 
-    const { error } = await supabase
-      .from("events")
-      .insert([
-        {
-          event_title: formData.eventTitle,
-          honoree_name: formData.honoreeName,
-          event_type: formData.eventType,
-          event_date: formData.date,
-          event_time: formData.time,
-          location: formData.location,
-          description: formData.description,
-          rsvp_deadline: formData.rsvpDeadline,
-          background_color: formData.backgroundColor,
-          guest_list_visibility: formData.guestListVisibility,
-          invite_image_url: imageUrl,
-          event_code: formData.eventCode,
-          created_by: user.id,
+   const { data: newEvent, error } = await supabase
+    .from("events")
+    .insert([
+      {
+        event_title: formData.eventTitle,
+        honoree_name: formData.honoreeName,
+        event_type: formData.eventType,
+        event_date: formData.date,
+        event_time: formData.time,
+        location: formData.location,
+        description: formData.description,
+        rsvp_deadline: formData.rsvpDeadline,
+        background_color: formData.backgroundColor,
+        guest_list_visibility: formData.guestListVisibility,
+        invite_image_url: imageUrl,
+        event_code: formData.eventCode,
+        created_by: user.id,
 
-          allowed_children: Number(formData.allowedChildren || 0),
-          allowed_adults: Number(formData.allowedAdults || 0),
-          guest_limit_note: formData.guestLimitNote || "",
+        allowed_children: Number(formData.allowedChildren || 0),
+        allowed_adults: Number(formData.allowedAdults || 0),
+        guest_limit_note: formData.guestLimitNote || "",
 
-          host_email: formData.hostEmail.trim() || null,
-          notify_host_on_rsvp: formData.notifyHostOnRsvp,
-          notify_host_on_rsvp_update: formData.notifyHostOnRsvpUpdate,
-        },
-      ])
-      .select()
-      .single();
+        host_email: formData.hostEmail.trim() || null,
+        notify_host_on_rsvp: formData.notifyHostOnRsvp,
+        notify_host_on_rsvp_update: formData.notifyHostOnRsvpUpdate,
+      },
+    ])
+    .select()
+    .single();
 
     if (error) {
       console.error("Error saving event:", error);
       alert("There was a problem saving the event.");
       return;
     }
+    await supabase.from("admin_activity_log").insert([
+    {
+      activity_type: "event_created",
+      event_id: newEvent.id,
+      event_title: newEvent.event_title,
+      host_user_id: user.id,
+      host_email: user.email,
+      details: {
+        event_date: newEvent.event_date,
+        event_time: newEvent.event_time,
+        location: newEvent.location,
+        host_notification_email: newEvent.host_email,
+      },
+    },
+  ]);
 
     navigate("/host/events");
   }
@@ -132,6 +148,7 @@ export default function CreateEvent() {
 
   return (
     <div className="create-event-page">
+      <Navbar />  
       <div className="create-event-container">
         <div className="create-event-header">
           <h2>Create Event</h2>

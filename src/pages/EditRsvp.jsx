@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
 import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 
 function EditRsvp() {
   const { token } = useParams();
@@ -147,6 +148,7 @@ function EditRsvp() {
           boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
         }}
       >
+        <Navbar />
         <h1 style={{ marginBottom: "0.5rem" }}>Edit RSVP</h1>
 
         <p style={{ color: "#666", marginBottom: "1.5rem" }}>

@@ -1,78 +1,125 @@
 import { useNavigate } from "react-router-dom";
+import Footer from "../components/Footer";
 
 function Home() {
   const navigate = useNavigate();
+
+  const primaryButton = {
+    padding: "14px 24px",
+    border: "none",
+    borderRadius: "12px",
+    background: "#6f627d",
+    color: "white",
+    fontSize: "1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+    boxShadow: "0 6px 14px rgba(111, 98, 125, 0.25)",
+  };
+
+  const secondaryButton = {
+    padding: "14px 24px",
+    border: "1px solid #d8cde6",
+    borderRadius: "12px",
+    background: "white",
+    color: "#6f627d",
+    fontSize: "1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+  };
 
   return (
     <div
       style={{
         minHeight: "100vh",
+        background: "#f6f2fb",
+        padding: "2rem 1.5rem",
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
         justifyContent: "center",
-        background: "#f7f7fb",
-        padding: "2rem",
       }}
     >
       <div
         style={{
-          maxWidth: "700px",
+          maxWidth: "760px",
+          width: "100%",
+          margin: "0 auto",
           textAlign: "center",
-          background: "white",
-          padding: "3rem",
-          borderRadius: "20px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          background: "#fbf8fd",
+          border: "1px solid #e8dff0",
+          padding: "3rem 2rem",
+          borderRadius: "22px",
+          boxShadow: "0 10px 30px rgba(80, 60, 100, 0.08)",
         }}
       >
-        <h1 style={{ fontSize: "3rem", marginBottom: "1rem" }}>InvitePool</h1>
+        <div
+          style={{
+            display: "inline-block",
+            background: "#eee7f5",
+            color: "#6f627d",
+            padding: "8px 14px",
+            borderRadius: "999px",
+            fontSize: "0.85rem",
+            fontWeight: "700",
+            marginBottom: "1rem",
+          }}
+        >
+          Create • Share • Track RSVPs
+        </div>
 
-        <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "2rem" }}>
-          Create beautiful event pages, share invite details, and collect RSVPs all in one place.
+        <h1
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "3.4rem",
+            color: "#6f627d",
+            margin: "0 0 1rem",
+          }}
+        >
+          InvitePool
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "1.1rem",
+            color: "#7c6f88",
+            lineHeight: "1.7",
+            maxWidth: "580px",
+            margin: "0 auto 2rem",
+          }}
+        >
+          Create beautiful event pages, share invite details, and collect RSVPs
+          all in one simple place.
         </p>
 
-        <button
-          onClick={() => navigate("/auth")}
+        <div
           style={{
-            padding: "14px 24px",
-            border: "none",
-            borderRadius: "12px",
-            background: "#8b5cf6",
-            color: "white",
-            fontSize: "1rem",
-            fontWeight: "600",
-            cursor: "pointer",
+            display: "flex",
+            justifyContent: "center",
+            gap: "0.8rem",
+            flexWrap: "wrap",
           }}
         >
-          Host an Invite
-        </button>
-        <button
-          onClick={() => navigate("/host/events")}
-          style={{
-            padding: "14px 24px",
-            border: "1px solid #8b5cf6",
-            borderRadius: "12px",
-            background: "white",
-            color: "#8b5cf6",
-            fontSize: "1rem",
-            fontWeight: "600",
-            cursor: "pointer",
-            marginTop: "12px",
-          }}
-        >
-          Host Dashboard
-        </button>
-          <div
-          style={{
-            marginTop: "2rem",
-            textAlign: "center",
-            fontSize: "0.85rem",
-            color: "#777",
-          }}
-        >
-          © {new Date().getFullYear()} InvitePool by Angelina Race
-        </div>
-      </div>
+          <button onClick={() => navigate("/auth")} style={primaryButton}>
+            Host an Invite
+          </button>
 
+          <button
+            onClick={() => navigate("/host/events")}
+            style={secondaryButton}
+          >
+            Host Dashboard
+          </button>
+
+          <button
+            onClick={() => navigate("/find-invite")}
+            style={secondaryButton}
+          >
+            Find My Invites
+          </button>
+        </div>
+
+        <Footer />
+      </div>
     </div>
   );
 }

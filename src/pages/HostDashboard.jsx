@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 if (!document.getElementById("host-dashboard-styles")) {
   const style = document.createElement("style");
@@ -54,13 +56,13 @@ if (!document.getElementById("host-dashboard-styles")) {
     }
 
     .host-btn {
-      background: #8b5cf6;
+      background: #6f627d;
       color: white;
     }
 
     .host-btn-ghost {
       background: #ede9fe;
-      color: #6d28d9;
+      color: #6f627d;
     }
 
     .host-list-card {
@@ -142,6 +144,17 @@ export default function HostDashboard() {
 
   const [event, setEvent] = useState(null);
   const [rsvps, setRsvps] = useState([]);
+  const [showAddRsvp, setShowAddRsvp] = useState(false);
+  const [editingRsvpId, setEditingRsvpId] = useState(null);
+
+  const [manualRsvp, setManualRsvp] = useState({
+    guestName: "",
+    email: "",
+    phone: "",
+    attending: "yes",
+    guestCount: 1,
+    message: "",
+  });
   const [loading, setLoading] = useState(true);
   const [copyMessage, setCopyMessage] = useState("");
 
@@ -290,7 +303,105 @@ export default function HostDashboard() {
       setTimeout(() => setUpdateStatus(""), 2000);
     }
   }
+  async function handleAddManualRsvp(e) {
+    e.preventDefault();
 
+    try {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .insert([
+          {
+            event_id: Number(id),
+            guest_name: manualRsvp.guestName,
+            email: manualRsvp.email.trim().toLowerCase() || null,
+            phone: manualRsvp.phone.trim() || null,
+            attending: manualRsvp.attending === "yes",
+            guest_count: Number(manualRsvp.guestCount),
+            message: manualRsvp.message,
+            edit_token: crypto.randomUUID(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRsvps((prev) => [data, ...prev]);
+
+      setManualRsvp({
+        guestName: "",
+        email: "",
+        phone: "",
+        attending: "yes",
+        guestCount: 1,
+        message: "",
+      });
+
+      setShowAddRsvp(false);
+      setContactSuccess("RSVP added!");
+      setTimeout(() => setContactSuccess(""), 2000);
+    } catch (error) {
+      console.error("Error adding RSVP:", error.message);
+      setContactSuccess("There was a problem adding the RSVP.");
+      setTimeout(() => setContactSuccess(""), 2500);
+    }
+  }
+
+  function startEditingRsvp(guest) {
+    setEditingRsvpId(guest.id);
+    setManualRsvp({
+      guestName: guest.guest_name || "",
+      email: guest.email || "",
+      phone: guest.phone || "",
+      attending: guest.attending ? "yes" : "no",
+      guestCount: guest.guest_count || 1,
+      message: guest.message || "",
+    });
+    setShowAddRsvp(false);
+  }
+
+  async function handleUpdateRsvp(e) {
+    e.preventDefault();
+
+    try {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .update({
+          guest_name: manualRsvp.guestName,
+          email: manualRsvp.email.trim().toLowerCase() || null,
+          phone: manualRsvp.phone.trim() || null,
+          attending: manualRsvp.attending === "yes",
+          guest_count: Number(manualRsvp.guestCount),
+          message: manualRsvp.message,
+        })
+        .eq("id", editingRsvpId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRsvps((prev) =>
+        prev.map((rsvp) => (rsvp.id === editingRsvpId ? data : rsvp))
+      );
+
+      setEditingRsvpId(null);
+      setManualRsvp({
+        guestName: "",
+        email: "",
+        phone: "",
+        attending: "yes",
+        guestCount: 1,
+        message: "",
+      });
+
+      setContactSuccess("RSVP updated!");
+      setTimeout(() => setContactSuccess(""), 2000);
+    } catch (error) {
+      console.error("Error updating RSVP:", error.message);
+      setContactSuccess("There was a problem updating the RSVP.");
+      setTimeout(() => setContactSuccess(""), 2500);
+    }
+  }
   async function deleteEventUpdate(updateId) {
     try {
       const { error } = await supabase
@@ -474,10 +585,12 @@ You can optionally opt in for event text updates on the RSVP form.`;
     return <div style={{ padding: "2rem" }}>No event found.</div>;
   }
 
-  return (
-    <div style={{ background: "#f6f2fb", minHeight: "100vh", padding: "2rem 1rem" }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div className="host-dashboard-grid"> 
+    return (
+      <div style={{ background: "#f6f2fb", minHeight: "100vh" }}>
+        <Navbar />
+
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "1rem" }}>
+          <div className="host-dashboard-grid">
           <div className="host-card">
             <h1 className="host-title">{event.event_title}</h1>
 
@@ -602,6 +715,119 @@ You can optionally opt in for event text updates on the RSVP form.`;
         </DashboardSection>
 
         <DashboardSection title="Guest Responses">
+          <button
+            className="host-btn"
+            onClick={() => {
+              setShowAddRsvp(!showAddRsvp);
+              setEditingRsvpId(null);
+              setManualRsvp({
+                guestName: "",
+                email: "",
+                phone: "",
+                attending: "yes",
+                guestCount: 1,
+                message: "",
+              });
+            }}
+            style={{ marginBottom: "1rem" }}
+          >
+            {showAddRsvp ? "Cancel" : "+ Add RSVP Manually"}
+          </button>
+
+          {(showAddRsvp || editingRsvpId) && (
+            <form
+              onSubmit={editingRsvpId ? handleUpdateRsvp : handleAddManualRsvp}
+              style={{ display: "grid", gap: "1rem", marginBottom: "1.5rem" }}
+            >
+              <input
+                className="host-input"
+                type="text"
+                placeholder="Guest name"
+                value={manualRsvp.guestName}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, guestName: e.target.value })
+                }
+                required
+              />
+
+              <input
+                className="host-input"
+                type="email"
+                placeholder="Email"
+                value={manualRsvp.email}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, email: e.target.value })
+                }
+              />
+
+              <input
+                className="host-input"
+                type="tel"
+                placeholder="Phone"
+                value={manualRsvp.phone}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, phone: e.target.value })
+                }
+              />
+
+              <select
+                className="host-input"
+                value={manualRsvp.attending}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, attending: e.target.value })
+                }
+              >
+                <option value="yes">Attending</option>
+                <option value="no">Not Attending</option>
+              </select>
+
+              <input
+                className="host-input"
+                type="number"
+                min="1"
+                value={manualRsvp.guestCount}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, guestCount: e.target.value })
+                }
+              />
+
+              <textarea
+                className="host-input"
+                placeholder="Message"
+                value={manualRsvp.message}
+                onChange={(e) =>
+                  setManualRsvp({ ...manualRsvp, message: e.target.value })
+                }
+                rows="3"
+              />
+
+              <div className="host-actions">
+                <button className="host-btn" type="submit">
+                  {editingRsvpId ? "Update RSVP" : "Save RSVP"}
+                </button>
+
+                <button
+                  className="host-btn-ghost"
+                  type="button"
+                  onClick={() => {
+                    setEditingRsvpId(null);
+                    setShowAddRsvp(false);
+                    setManualRsvp({
+                      guestName: "",
+                      email: "",
+                      phone: "",
+                      attending: "yes",
+                      guestCount: 1,
+                      message: "",
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
           {rsvps.length === 0 ? (
             <p className="host-text">No responses yet.</p>
           ) : (
@@ -611,27 +837,56 @@ You can optionally opt in for event text updates on the RSVP form.`;
                   <div>
                     <p className="host-list-title">
                       {guest.guest_name || "No name"}
-                      {guest.guest_count > 1 && <span className="host-muted"> + {guest.guest_count}</span>}
-                      <span style={{ marginLeft: "6px" }}>{guest.attending ? "✅" : "❌"}</span>
+                      {guest.guest_count > 1 && (
+                        <span className="host-muted"> + {guest.guest_count}</span>
+                      )}
+                      <span style={{ marginLeft: "6px" }}>
+                        {guest.attending ? "✅" : "❌"}
+                      </span>
                     </p>
 
                     {guest.message && <p className="host-text">{guest.message}</p>}
-                    {guest.email && <p className="host-text"><strong>Email:</strong> {guest.email}</p>}
-                    {guest.phone && <p className="host-text"><strong>Phone:</strong> {guest.phone}</p>}
-                    <p className="host-text"><strong>SMS Opt-In:</strong> {guest.sms_opt_in ? "Yes" : "No"}</p>
+                    {guest.email && (
+                      <p className="host-text">
+                        <strong>Email:</strong> {guest.email}
+                      </p>
+                    )}
+                    {guest.phone && (
+                      <p className="host-text">
+                        <strong>Phone:</strong> {guest.phone}
+                      </p>
+                    )}
+                    <p className="host-text">
+                      <strong>SMS Opt-In:</strong> {guest.sms_opt_in ? "Yes" : "No"}
+                    </p>
                     <p className="host-muted">
-                      {guest.created_at ? new Date(guest.created_at).toLocaleString() : "Unknown"}
+                      {guest.created_at
+                        ? new Date(guest.created_at).toLocaleString()
+                        : "Unknown"}
                     </p>
                   </div>
 
-                  <button className="host-danger-btn" onClick={() => handleDeleteRsvp(guest.id)}>
-                    Delete RSVP
-                  </button>
+                  <div className="host-actions">
+                    <button
+                      className="host-btn-ghost"
+                      onClick={() => startEditingRsvp(guest)}
+                    >
+                      Edit RSVP
+                    </button>
+
+                    <button
+                      className="host-danger-btn"
+                      onClick={() => handleDeleteRsvp(guest.id)}
+                    >
+                      Delete RSVP
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </DashboardSection>
+        <Footer />
       </div>
     </div>
   );

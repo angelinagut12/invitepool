@@ -7,6 +7,8 @@ import EditEvent from "./pages/EditEvent";
 import Auth from "./pages/Auth";
 import HostEvents from "./pages/HostEvents";
 import EditRsvp from "./pages/EditRsvp";
+import FindInvite from "./pages/FindInvite";
+import MyInvites from "./pages/MyInvites";
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/host/events" element={<HostEvents />} />
         <Route path="/rsvp/edit/:token" element={<EditRsvp />} />
+        <Route path="/find-invite" element={<FindInvite />} />
+        <Route path="/my-invites" element={<MyInvites />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../components/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
-
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 if (!document.getElementById("host-theme")) {
   const style = document.createElement("style");
@@ -143,6 +144,7 @@ export default function HostEvents() {
 
   return (
     <div className="host-shell">
+        <Navbar />
       <div className="host-container">
 
         <div className="host-header">
@@ -184,15 +186,15 @@ export default function HostEvents() {
 
                 <div className="host-actions">
                   <Link to={`/host/event/${event.id}`}>
-                    <button className="host-btn">
-                      Manage
-                    </button>
+                    <button className="host-btn">Manage</button>
+                  </Link>
+
+                  <Link to={`/edit/event/${event.id}`}>
+                    <button className="host-btn-ghost">Edit Invite</button>
                   </Link>
 
                   <Link to={`/event/${event.id}`}>
-                    <button className="host-btn-ghost">
-                      View Invite
-                    </button>
+                    <button className="host-btn-ghost">View Invite</button>              
                   </Link>
                 </div>
 
@@ -201,6 +203,7 @@ export default function HostEvents() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

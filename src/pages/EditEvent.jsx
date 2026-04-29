@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
 import "./CreateEvent.css";
+import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 
 function EditEvent() {
   const { id } = useParams();
@@ -149,6 +151,41 @@ function EditEvent() {
       setSaving(false);
     }
   }
+  async function handleDeleteEvent() {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this invite? This will also delete all RSVPs for this event."
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setSaving(true);
+
+      // Delete RSVPs first
+      const { error: rsvpDeleteError } = await supabase
+        .from("rsvps")
+        .delete()
+        .eq("event_id", id);
+
+      if (rsvpDeleteError) throw rsvpDeleteError;
+
+      // Delete event
+      const { error: eventDeleteError } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", id);
+
+      if (eventDeleteError) throw eventDeleteError;
+
+      alert("Invite deleted successfully.");
+      navigate("/host/events");
+    } catch (error) {
+      console.error("Error deleting invite:", error.message);
+      alert("There was a problem deleting the invite.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return <div style={{ padding: "2rem" }}>Loading event...</div>;
@@ -156,6 +193,7 @@ function EditEvent() {
 
   return (
     <div className="create-event-page">
+      <Navbar />
       <div className="create-event-container">
         <div className="create-event-header">
           <h2>Edit Event</h2>
@@ -335,6 +373,18 @@ function EditEvent() {
 
               <button type="submit" disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteEvent}
+                disabled={saving}
+                style={{
+                  background: "#dc2626",
+                  color: "white",
+                  marginTop: "0.75rem",
+                }}
+              >
+                Delete Invite
               </button>
             </form>
           </div>
