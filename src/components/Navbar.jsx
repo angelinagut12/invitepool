@@ -1,12 +1,12 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
-import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // 👇 check if user is logged in
   useEffect(() => {
     checkUser();
   }, []);
@@ -19,76 +19,135 @@ export default function Navbar() {
     setUser(user);
   }
 
-  // 👇 logout function
   async function handleLogout() {
     await supabase.auth.signOut();
+    setMenuOpen(false);
     navigate("/");
   }
 
+  function goTo(path) {
+    setMenuOpen(false);
+    navigate(path);
+  }
+
   return (
-    <div
-      style={{
-        width: "100%",
-        padding: "0.6rem 1.2rem",
-        borderBottom: "1px solid #e8dff0",
-        background: "#fbf8fd",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      {/* Logo */}
-      <div
-        onClick={() => navigate("/")}
-        style={{
-          fontWeight: "700",
-          fontSize: "1.1rem",
-          color: "#6f627d",
-          cursor: "pointer",
-        }}
-      >
-        InvitePool
+    <nav style={navWrapper}>
+      <div style={navInner}>
+        <button style={logoButton} onClick={() => goTo("/")}>
+          InvitePool
+        </button>
+
+        <button
+          style={menuButton}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Toggle navigation menu"
+        >
+          {menuOpen ? "×" : "☰"}
+        </button>
       </div>
 
-      {/* Links */}
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-        <button style={link} onClick={() => navigate("/find-invite")}>
-          Find Invite
-        </button>
-
-        <button style={link} onClick={() => navigate("/my-invites")}>
-          My Invites
-        </button>
-
-        <button style={link} onClick={() => navigate("/host/events")}>
-          Dashboard
-        </button>
-
-        {/* 👇 Only show if logged in */}
-        {user && (
-          <button style={logout} onClick={handleLogout}>
-            Logout
+      {menuOpen && (
+        <div style={dropdown}>
+          <button style={dropdownLink} onClick={() => goTo("/")}>
+            Home
           </button>
-        )}
-      </div>
-    </div>
+
+          <button style={dropdownLink} onClick={() => goTo("/find-invite")}>
+            Find Invite
+          </button>
+
+          <button style={dropdownLink} onClick={() => goTo("/my-invites")}>
+            My Invites
+          </button>
+
+          <button style={dropdownLink} onClick={() => goTo("/host/events")}>
+            Host Dashboard
+          </button>
+
+          <button style={primaryLink} onClick={() => goTo("/create")}>
+            + Create Event
+          </button>
+
+          {user && (
+            <button style={logoutLink} onClick={handleLogout}>
+              Logout
+            </button>
+          )}
+        </div>
+      )}
+    </nav>
   );
 }
 
-const link = {
+const navWrapper = {
+  width: "100%",
+  background: "#fbf8fd",
+  borderBottom: "1px solid #e8dff0",
+  position: "relative",
+  zIndex: 50,
+};
+
+const navInner = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+  padding: "0.75rem 1rem",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const logoButton = {
   background: "none",
   border: "none",
   color: "#6f627d",
-  fontWeight: "500",
-  fontSize: "0.9rem",
+  fontFamily: "'Playfair Display', serif",
+  fontSize: "1.35rem",
+  fontWeight: "700",
   cursor: "pointer",
 };
 
-const logout = {
-  background: "transparent",
-  border: "none",
+const menuButton = {
+  background: "#eee7f5",
+  border: "1px solid #d8cde6",
   color: "#6f627d",
-  fontWeight: "600",
-  fontSize: "0.85rem",
+  borderRadius: "10px",
+  width: "42px",
+  height: "38px",
+  fontSize: "1.3rem",
+  fontWeight: "700",
   cursor: "pointer",
+};
+
+const dropdown = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+  padding: "0 1rem 1rem",
+  display: "grid",
+  gap: "0.65rem",
+};
+
+const dropdownLink = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: "12px",
+  border: "1px solid #e8dff0",
+  background: "white",
+  color: "#6f627d",
+  fontWeight: "700",
+  fontSize: "0.95rem",
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+const primaryLink = {
+  ...dropdownLink,
+  background: "#6f627d",
+  color: "white",
+  border: "1px solid #6f627d",
+  textAlign: "center",
+};
+
+const logoutLink = {
+  ...dropdownLink,
+  color: "#9f4f5f",
 };

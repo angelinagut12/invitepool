@@ -42,9 +42,6 @@ export default function Footer() {
             flexWrap: "wrap",
           }}
         >
-          <button style={link} onClick={() => navigate("/")}>
-            Home
-          </button>
 
           <button style={link} onClick={() => navigate("/find-invite")}>
             Find Invite
