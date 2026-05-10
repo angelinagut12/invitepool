@@ -152,7 +152,8 @@ export default function HostDashboard() {
     email: "",
     phone: "",
     attending: "yes",
-    guestCount: 1,
+    adults: 1,
+    children: 0,
     message: "",
   });
   const [loading, setLoading] = useState(true);
@@ -304,9 +305,17 @@ export default function HostDashboard() {
     }
   }
   async function handleAddManualRsvp(e) {
-    e.preventDefault();
+      e.preventDefault();
 
     try {
+      const adults = Number(manualRsvp.adults || 0);
+      const children = Number(manualRsvp.children || 0);
+
+      if (adults + children < 1) {
+        setContactSuccess("Please enter at least 1 adult or kid.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("rsvps")
         .insert([
@@ -315,8 +324,10 @@ export default function HostDashboard() {
             guest_name: manualRsvp.guestName,
             email: manualRsvp.email.trim().toLowerCase() || null,
             phone: manualRsvp.phone.trim() || null,
-            attending: manualRsvp.attending === "yes",
-            guest_count: Number(manualRsvp.guestCount),
+            attending: manualRsvp.attending,
+            adults,
+            children,
+            guest_count: adults + children,
             message: manualRsvp.message,
             edit_token: crypto.randomUUID(),
           },
@@ -333,13 +344,15 @@ export default function HostDashboard() {
         email: "",
         phone: "",
         attending: "yes",
-        guestCount: 1,
+        adults: 1,
+        children: 0,
         message: "",
       });
 
       setShowAddRsvp(false);
       setContactSuccess("RSVP added!");
       setTimeout(() => setContactSuccess(""), 2000);
+
     } catch (error) {
       console.error("Error adding RSVP:", error.message);
       setContactSuccess("There was a problem adding the RSVP.");
@@ -353,10 +366,11 @@ export default function HostDashboard() {
       guestName: guest.guest_name || "",
       email: guest.email || "",
       phone: guest.phone || "",
-      attending: guest.attending ? "yes" : "no",
-      guestCount: guest.guest_count || 1,
-      message: guest.message || "",
-    });
+      attending: guest.attending || "yes",
+      adults: guest.adults ?? 1,
+      children: guest.children ?? 0,
+        message: guest.message || "",
+      });
     setShowAddRsvp(false);
   }
 
@@ -364,14 +378,24 @@ export default function HostDashboard() {
     e.preventDefault();
 
     try {
+      const adults = Number(manualRsvp.adults || 0);
+      const children = Number(manualRsvp.children || 0);
+
+      if (adults + children < 1) {
+        setContactSuccess("Please enter at least 1 adult or kid.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("rsvps")
         .update({
           guest_name: manualRsvp.guestName,
           email: manualRsvp.email.trim().toLowerCase() || null,
           phone: manualRsvp.phone.trim() || null,
-          attending: manualRsvp.attending === "yes",
-          guest_count: Number(manualRsvp.guestCount),
+          attending: manualRsvp.attending,
+          adults,
+          children,
+          guest_count: adults + children,
           message: manualRsvp.message,
         })
         .eq("id", editingRsvpId)
@@ -381,7 +405,7 @@ export default function HostDashboard() {
       if (error) throw error;
 
       setRsvps((prev) =>
-        prev.map((rsvp) => (rsvp.id === editingRsvpId ? data : rsvp))
+        prev.map((r) => (r.id === editingRsvpId ? data : r))
       );
 
       setEditingRsvpId(null);
@@ -390,12 +414,14 @@ export default function HostDashboard() {
         email: "",
         phone: "",
         attending: "yes",
-        guestCount: 1,
+        adults: 1,
+        children: 0,
         message: "",
       });
 
       setContactSuccess("RSVP updated!");
       setTimeout(() => setContactSuccess(""), 2000);
+
     } catch (error) {
       console.error("Error updating RSVP:", error.message);
       setContactSuccess("There was a problem updating the RSVP.");
@@ -418,18 +444,24 @@ export default function HostDashboard() {
       setTimeout(() => setUpdateStatus(""), 2000);
     }
   }
-
+  function getStatus(value) {
+    if (value === "yes" || value === true || value === "true") return "yes";
+    if (value === "no" || value === false || value === "false") return "no";
+    if (value === "maybe") return "maybe"; 
+    
+  }
   const stats = useMemo(() => {
     const total = rsvps.length;
-    const attending = rsvps.filter((r) => r.attending === true).length;
-    const notAttending = rsvps.filter((r) => r.attending === false).length;
-    const pending = total - attending - notAttending;
+
+    const attending = rsvps.filter(r => r.attending === "yes").length;
+    const maybe = rsvps.filter(r => r.attending === "maybe").length;
+    const notAttending = rsvps.filter(r => r.attending === "no").length;
 
     const totalAttendingGuests = rsvps
-      .filter((r) => r.attending === true)
-      .reduce((sum, r) => sum + (r.guest_count || 1), 0);
+      .filter(r => r.attending === "yes")
+      .reduce((sum, r) => sum + Number(r.guest_count || 0), 0);
 
-    return { total, attending, notAttending, pending, totalAttendingGuests };
+    return { total, attending, maybe, notAttending, totalAttendingGuests };
   }, [rsvps]);
 
   async function copyInviteLink() {
@@ -642,8 +674,8 @@ You can optionally opt in for event text updates on the RSVP form.`;
         >
           <StatCard label="Total Responses" value={stats.total} />
           <StatCard label="Attending" value={stats.attending} />
+          <StatCard label="Maybe" value={stats.maybe} />
           <StatCard label="Not Attending" value={stats.notAttending} />
-          <StatCard label="Pending" value={stats.pending} />
           <StatCard label="Guests Attending" value={stats.totalAttendingGuests} />
         </div>
 
@@ -725,7 +757,8 @@ You can optionally opt in for event text updates on the RSVP form.`;
                 email: "",
                 phone: "",
                 attending: "yes",
-                guestCount: 1,
+                adults: 1,
+                children: 0,
                 message: "",
               });
             }}
@@ -739,16 +772,26 @@ You can optionally opt in for event text updates on the RSVP form.`;
               onSubmit={editingRsvpId ? handleUpdateRsvp : handleAddManualRsvp}
               style={{ display: "grid", gap: "1rem", marginBottom: "1.5rem" }}
             >
+             <div style={{ display: "flex", gap: "1rem" }}>
               <input
                 className="host-input"
-                type="text"
-                placeholder="Guest name"
-                value={manualRsvp.guestName}
+                type="number"
+                min="0"
+                placeholder="Adults"
+                value={manualRsvp.adults}
                 onChange={(e) =>
-                  setManualRsvp({ ...manualRsvp, guestName: e.target.value })
+                  setManualRsvp({ ...manualRsvp, adults: e.target.value })
                 }
-                required
               />
+              <input
+                className="host-input"
+                type="number"
+                min="0"
+                placeholder="Kids"
+                value={manualRsvp.children}
+                onChange={(e) => setManualRsvp({ ...manualRsvp, children: e.target.value })}
+              />
+            </div>
 
               <input
                 className="host-input"
@@ -777,19 +820,10 @@ You can optionally opt in for event text updates on the RSVP form.`;
                   setManualRsvp({ ...manualRsvp, attending: e.target.value })
                 }
               >
-                <option value="yes">Attending</option>
-                <option value="no">Not Attending</option>
+                <option value="yes">Yes</option>
+                <option value="maybe">Maybe</option>
+                <option value="no">No</option>
               </select>
-
-              <input
-                className="host-input"
-                type="number"
-                min="1"
-                value={manualRsvp.guestCount}
-                onChange={(e) =>
-                  setManualRsvp({ ...manualRsvp, guestCount: e.target.value })
-                }
-              />
 
               <textarea
                 className="host-input"
@@ -817,7 +851,8 @@ You can optionally opt in for event text updates on the RSVP form.`;
                       email: "",
                       phone: "",
                       attending: "yes",
-                      guestCount: 1,
+                      adults: 1,
+                      children: 0,
                       message: "",
                     });
                   }}
@@ -838,12 +873,18 @@ You can optionally opt in for event text updates on the RSVP form.`;
                     <p className="host-list-title">
                       {guest.guest_name || "No name"}
                       {guest.guest_count > 1 && (
-                        <span className="host-muted"> + {guest.guest_count}</span>
+                        <span className="host-muted"> + {guest.guest_count - 1}</span>
                       )}
                       <span style={{ marginLeft: "6px" }}>
-                        {guest.attending ? "✅" : "❌"}
+                         { { yes: "✅", no: "❌", maybe: "❔" }[guest.attending] || "❔" }      
                       </span>
                     </p>
+                    {guest.adults != null && guest.children != null && (
+                      <p className="host-muted">
+                        {guest.adults} adult{Number(guest.adults) === 1 ? "" : "s"} ·{" "}
+                        {guest.children} kid{Number(guest.children) === 1 ? "" : "s"}
+                      </p>
+                    )}
 
                     {guest.message && <p className="host-text">{guest.message}</p>}
                     {guest.email && (

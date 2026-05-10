@@ -14,6 +14,7 @@ if (!document.getElementById("ep-fonts")) {
     "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap";
   document.head.appendChild(link);
 }
+
 if (!document.getElementById("ep-styles")) {
   const s = document.createElement("style");
   s.id = "ep-styles";
@@ -71,15 +72,9 @@ if (!document.getElementById("ep-styles")) {
       background: #f4f4f5; border: 1px solid #e4e4e7;
     }
     .ep-chip-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: #eee7f5;
-      color: #8d7f9b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #eee7f5; color: #8d7f9b;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .ep-chip-label { font-family:'Inter',sans-serif; font-size: 0.7rem; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: .07em; margin: 0 0 3px; }
     .ep-chip-value { font-family:'Inter',sans-serif; font-size: 0.88rem; font-weight: 500; color: #6f627d; margin: 0; line-height: 1.4; }
@@ -112,14 +107,12 @@ if (!document.getElementById("ep-styles")) {
       display: flex; align-items: center; justify-content: center;
       font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600;
     }
-    .ep-avatar.no { background: #e4e4e7; color: #71717a; }
 
     .ep-badge {
       font-family:'Inter',sans-serif; font-size: 0.72rem; font-weight: 600;
       padding: 3px 9px; border-radius: 999px; white-space: nowrap;
     }
     .ep-badge.yes { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .ep-badge.no  { background: #f4f4f5; color: #71717a;  border: 1px solid #e4e4e7; }
 
     .ep-update {
       padding: 14px 16px; border-radius: 12px;
@@ -169,15 +162,15 @@ if (!document.getElementById("ep-styles")) {
   document.head.appendChild(s);
 }
 
-/* ── Tiny inline SVG icons ── */
 const Ico = ({ name, size = 15 }) => {
   const p = {
-    cal:  "M8 2v3M16 2v3M3 8h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+    cal: "M8 2v3M16 2v3M3 8h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
     time: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2",
-    pin:  "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
+    pin: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
     dead: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l3 3",
     lock: "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zM7 11V7a5 5 0 0 1 10 0v4",
   };
+
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -188,49 +181,53 @@ const Ico = ({ name, size = 15 }) => {
 
 const PREVIEW_COUNT = 3;
 
-/* ════════════ GuestList ════════════ */
 function GuestList({ rsvps }) {
   const [expanded, setExpanded] = useState(false);
-  const attending    = rsvps.filter((r) => r.attending);
-  const notAttending = rsvps.filter((r) => !r.attending);
-  const total   = rsvps.length;
-  const visible = expanded ? rsvps : rsvps.slice(0, PREVIEW_COUNT);
+  const goingRsvps = rsvps.filter((r) => r.attending === "yes");
+  const totalPeopleGoing = goingRsvps.reduce(
+    (sum, r) => sum + Number(r.guest_count || 0),
+    0
+  );
+  const visible = expanded ? goingRsvps : goingRsvps.slice(0, PREVIEW_COUNT);
 
   return (
     <>
       <hr className="ep-divider" />
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
         <h2 className="ep-section-heading" style={{ margin: 0 }}>Who's Coming</h2>
-        {total > 0 && (
+
+        {totalPeopleGoing > 0 && (
           <span style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", color: "#71717a" }}>
-            {attending.length} going · {notAttending.length} not going
+            {totalPeopleGoing} people going
           </span>
         )}
       </div>
 
-      {total === 0 ? (
+      {goingRsvps.length === 0 ? (
         <p style={{ fontFamily: "'Inter',sans-serif", color: "#a1a1aa", textAlign: "center", padding: "1.25rem 0" }}>
-          No responses yet — be the first!
+          No confirmed guests yet.
         </p>
       ) : (
         <>
           <div style={{ display: "grid", gap: "8px" }}>
             {visible.map((rsvp) => (
               <div key={rsvp.id} className="ep-guest">
-                <div className={`ep-avatar${rsvp.attending ? "" : " no"}`}>
+                <div className="ep-avatar">
                   {(rsvp.guest_name || "?")[0].toUpperCase()}
                 </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: "0.92rem", color: "#6f627d" }}>
                       {rsvp.guest_name}
                     </span>
-                    <span className={`ep-badge ${rsvp.attending ? "yes" : "no"}`}>
-                      {rsvp.attending
-                        ? `Going${rsvp.guest_count > 1 ? ` +${rsvp.guest_count - 1}` : ""}`
-                        : "Can't make it"}
+
+                    <span className="ep-badge yes">
+                      Going{Number(rsvp.guest_count || 0) > 1 ? ` +${Number(rsvp.guest_count) - 1}` : ""}
                     </span>
                   </div>
+
                   {rsvp.message && (
                     <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "#71717a", fontStyle: "italic", whiteSpace: "pre-line", fontFamily: "'Inter',sans-serif" }}>
                       "{rsvp.message}"
@@ -241,9 +238,9 @@ function GuestList({ rsvps }) {
             ))}
           </div>
 
-          {total > PREVIEW_COUNT && (
+          {goingRsvps.length > PREVIEW_COUNT && (
             <button className="ep-expand" onClick={() => setExpanded((p) => !p)}>
-              {expanded ? "Show less ↑" : `See all ${total} guests ↓`}
+              {expanded ? "Show less ↑" : `See all ${goingRsvps.length} guests ↓`}
             </button>
           )}
         </>
@@ -252,26 +249,24 @@ function GuestList({ rsvps }) {
   );
 }
 
-/* ════════════ EventPage ════════════ */
 function EventPage() {
-  const { id }   = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const [event, setEvent]               = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [rsvps, setRsvps]               = useState([]);
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [rsvps, setRsvps] = useState([]);
   const [eventUpdates, setEventUpdates] = useState([]);
-  const [enteredCode, setEnteredCode]   = useState("");
-  const [isUnlocked, setIsUnlocked]     = useState(false);
-  const [codeError, setCodeError]       = useState("");
-  const [rsvpError, setRsvpError]       = useState("");
-  const [rsvpSuccess, setRsvpSuccess]   = useState(false);
-  const [editLink, setEditLink]         = useState("");
-  const [submitting, setSubmitting]     = useState(false);
+  const [enteredCode, setEnteredCode] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [rsvpError, setRsvpError] = useState("");
+  const [rsvpSuccess, setRsvpSuccess] = useState(false);
+  const [editLink, setEditLink] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const [existingRsvpFound, setExistingRsvpFound]   = useState(false);
+  const [existingRsvpFound, setExistingRsvpFound] = useState(false);
   const [linkRequestSuccess, setLinkRequestSuccess] = useState("");
-  const [requestedEditLink, setRequestedEditLink]   = useState("");
 
   const [rsvpData, setRsvpData] = useState({
     guestName: "",
@@ -280,67 +275,114 @@ function EventPage() {
     attending: "yes",
     message: "",
     smsOptIn: false,
-
-    children: 1,
     adults: 1,
+    children: 0,
   });
 
-  useEffect(() => { fetchEvent(); fetchRsvps(); fetchEventUpdates(); }, [id]);
+  useEffect(() => {
+    fetchEvent();
+    fetchRsvps();
+    fetchEventUpdates();
+  }, [id]);
 
   async function fetchEvent() {
-    const { data, error } = await supabase.from("events").select("*").eq("id", id).single();
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .single();
+
     if (!error) setEvent(data);
     setLoading(false);
   }
+
   async function fetchRsvps() {
     const { data } = await supabase
-      .from("rsvps").select("id,guest_name,attending,guest_count,message,created_at")
-      .eq("event_id", id).order("created_at", { ascending: false });
+      .from("rsvps")
+      .select("id,guest_name,attending,guest_count,adults,children,message,created_at")
+      .eq("event_id", id)
+      .order("created_at", { ascending: false });
+
     setRsvps(data || []);
   }
+
   async function fetchEventUpdates() {
     const { data } = await supabase
-      .from("event_updates").select("*").eq("event_id", id).order("created_at", { ascending: false });
+      .from("event_updates")
+      .select("*")
+      .eq("event_id", id)
+      .order("created_at", { ascending: false });
+
     setEventUpdates(data || []);
   }
 
   function handleRsvpChange(e) {
     const { name, value, type, checked } = e.target;
-    setRsvpData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
+    setRsvpData((p) => ({
+      ...p,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setRsvpError("");
   }
 
   async function handleRsvpSubmit(e) {
     e.preventDefault();
-    setRsvpError(""); setRsvpSuccess(false); setEditLink("");
-    setExistingRsvpFound(false); setSubmitting(true);
+
+    setRsvpError("");
+    setRsvpSuccess(false);
+    setEditLink("");
+    setExistingRsvpFound(false);
+    setSubmitting(true);
 
     const trimmedEmail = rsvpData.email.trim().toLowerCase();
-    const editToken    = crypto.randomUUID();
+    const editToken = crypto.randomUUID();
+
+    const adults = Number(rsvpData.adults || 0);
+    const children = Number(rsvpData.children || 0);
+
+    if (adults + children < 1) {
+      setRsvpError("Please select at least 1 adult or child.");
+      setSubmitting(false);
+      return;
+    }
 
     const { data: existing } = await supabase
-      .from("rsvps").select("id,edit_token")
-      .eq("event_id", id).eq("email", trimmedEmail).maybeSingle();
+      .from("rsvps")
+      .select("id,edit_token")
+      .eq("event_id", id)
+      .eq("email", trimmedEmail)
+      .maybeSingle();
 
-    if (existing) { setExistingRsvpFound(true); setSubmitting(false); return; }
+    if (existing) {
+      setExistingRsvpFound(true);
+      setSubmitting(false);
+      return;
+    }
 
-    const { error } = await supabase.from("rsvps").insert([{
-      event_id:              id,
-      guest_name:            rsvpData.guestName,
-      email:                 trimmedEmail,
-      phone:                 rsvpData.phone?.trim() || null,
-      attending:             rsvpData.attending === "yes",
-      guest_count:
-        Number(rsvpData.children || 0) +
-        Number(rsvpData.adults || 0),
-      message:               rsvpData.message,
-      sms_opt_in:            rsvpData.smsOptIn,
-      sms_opt_in_at:         rsvpData.smsOptIn ? new Date().toISOString() : null,
-      edit_token:            editToken,
-      edit_token_created_at: new Date().toISOString(),
-    }]);
+    const { error } = await supabase.from("rsvps").insert([
+      {
+        event_id: id,
+        guest_name: rsvpData.guestName,
+        email: trimmedEmail,
+        phone: rsvpData.phone?.trim() || null,
+        attending: rsvpData.attending,
+        adults,
+        children,
+        guest_count: adults + children,
+        message: rsvpData.message,
+        sms_opt_in: rsvpData.smsOptIn,
+        sms_opt_in_at: rsvpData.smsOptIn ? new Date().toISOString() : null,
+        edit_token: editToken,
+        edit_token_created_at: new Date().toISOString(),
+      },
+    ]);
 
-    if (error) { setRsvpError("There was a problem saving your RSVP."); setSubmitting(false); return; }
+    if (error) {
+      console.error("RSVP save error:", error.message);
+      setRsvpError("There was a problem saving your RSVP.");
+      setSubmitting(false);
+      return;
+    }
 
     const editUrl = `${window.location.origin}/rsvp/edit/${editToken}`;
     setEditLink(editUrl);
@@ -354,12 +396,17 @@ function EventPage() {
         html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
           <h2 style="color:#6f627d;">You're on the list! 🎉</h2>
           <p>Hi ${rsvpData.guestName || "there"},</p>
-          <p>Your RSVP for <strong>${event.event_title}</strong> has been received. The host has been notified.</p>
+          <p>Your RSVP for <strong>${event.event_title}</strong> has been received.</p>
+          <p><strong>Status:</strong> ${rsvpData.attending}</p>
+          <p><strong>Party size:</strong> ${adults + children}</p>
+          <p><strong>Breakdown:</strong> ${adults} adult(s), ${children} kid(s)</p>
           <a href="${editUrl}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#6f627d;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Edit My RSVP</a>
           <p style="margin-top:24px;color:#71717a;font-size:0.85rem;">Save this email so you can find your edit link later.</p>
         </div>`,
       });
-    } catch (err) { console.error("Guest email failed:", err.message); }
+    } catch (err) {
+      console.error("Guest email failed:", err.message);
+    }
 
     if (event.notify_host_on_rsvp && event.host_email) {
       try {
@@ -369,33 +416,63 @@ function EventPage() {
           html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
             <h2>New RSVP</h2>
             <p><strong>Name:</strong> ${rsvpData.guestName}</p>
-            <p><strong>Attending:</strong> ${rsvpData.attending === "yes" ? "Yes" : "No"}</p>
-            <p><strong>Party size:</strong> ${rsvpData.guestCount}</p>
+            <p><strong>Attending:</strong> ${rsvpData.attending}</p>
+            <p><strong>Party size:</strong> ${adults + children}</p>
+            <p><strong>Breakdown:</strong> ${adults} adult(s), ${children} kid(s)</p>
             <p><strong>Message:</strong> ${rsvpData.message || "—"}</p>
             <a href="${window.location.origin}/host/event/${id}" style="color:#6f627d;">Open Host Dashboard →</a>
           </div>`,
         });
-      } catch (err) { console.error("Host email failed:", err.message); }
+      } catch (err) {
+        console.error("Host email failed:", err.message);
+      }
     }
 
-    setRsvpData({ guestName: "", email: "", phone: "", attending: "yes", guestCount: 1, message: "", smsOptIn: false });
+    setRsvpData({
+      guestName: "",
+      email: "",
+      phone: "",
+      attending: "yes",
+      message: "",
+      smsOptIn: false,
+      adults: 1,
+      children: 0,
+    });
+
     setSubmitting(false);
   }
 
   async function handleRequestNewEditLink() {
-    setRsvpError(""); setLinkRequestSuccess(""); setRequestedEditLink("");
+    setRsvpError("");
+    setLinkRequestSuccess("");
+
     const trimmedEmail = rsvpData.email.trim().toLowerCase();
-    if (!trimmedEmail) { setRsvpError("Please enter your email above first."); return; }
+
+    if (!trimmedEmail) {
+      setRsvpError("Please enter your email above first.");
+      return;
+    }
 
     const newToken = crypto.randomUUID();
-    const { data, error } = await supabase.from("rsvps")
-      .update({ edit_token: newToken, edit_token_created_at: new Date().toISOString() })
-      .eq("event_id", id).eq("email", trimmedEmail).select("id").maybeSingle();
 
-    if (error || !data) { setRsvpError("We couldn't find an RSVP for that email."); return; }
+    const { data, error } = await supabase
+      .from("rsvps")
+      .update({
+        edit_token: newToken,
+        edit_token_created_at: new Date().toISOString(),
+      })
+      .eq("event_id", id)
+      .eq("email", trimmedEmail)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      setRsvpError("We couldn't find an RSVP for that email.");
+      return;
+    }
 
     const freshLink = `${window.location.origin}/rsvp/edit/${newToken}`;
-    setRequestedEditLink(freshLink);
+
     try {
       await sendEmail({
         to: trimmedEmail,
@@ -406,6 +483,7 @@ function EventPage() {
           <a href="${freshLink}" style="display:inline-block;padding:12px 24px;background:#6f627d;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Edit My RSVP</a>
         </div>`,
       });
+
       setLinkRequestSuccess("A fresh edit link has been sent to your email.");
     } catch {
       setRsvpError("The link was created but the email didn't send.");
@@ -414,116 +492,140 @@ function EventPage() {
 
   function handleUnlockSubmit(e) {
     e.preventDefault();
-    const typed  = enteredCode.trim().toLowerCase();
+
+    const typed = enteredCode.trim().toLowerCase();
     const actual = (event?.event_code || "").trim().toLowerCase();
-    if (typed === actual) { setCodeError(""); setIsUnlocked(true); }
-    else setCodeError("Incorrect code. Please try again.");
+
+    if (typed === actual) {
+      setCodeError("");
+      setIsUnlocked(true);
+    } else {
+      setCodeError("Incorrect code. Please try again.");
+    }
   }
 
   function formatTime(t) {
     if (!t) return null;
+
     const [h, m] = t.split(":");
     let hr = parseInt(h);
     const ampm = hr >= 12 ? "PM" : "AM";
+
     hr = hr % 12 || 12;
+
     return `${hr}:${m.padStart(2, "0")} ${ampm}`;
   }
+
   function formatDate(d) {
     if (!d) return null;
+
     const [y, mo, day] = d.split("-").map(Number);
-    return new Date(y, mo - 1, day).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    return new Date(y, mo - 1, day).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   }
 
-  /* ── Loading ── */
-  if (loading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f4f4f5" }}>
-      <p style={{ fontFamily: "'Inter',sans-serif", color: "#71717a" }}>Loading…</p>
-    </div>
-  );
-
-  if (!event) return (
-    <div style={{ padding: "2rem", fontFamily: "'Inter',sans-serif" }}>
-      <h2>Event not found</h2><p>This invite may have been removed.</p>
-    </div>
-  );
-
-  /* ── Unlock screen ── */
-  if (!isUnlocked) return (
-    <div className="ep-unlock-wrap">
-      <div className="ep-unlock-box ep-animate">
-        <div style={{ width: 48, height: 48, borderRadius: 14, background: "#6f627d", color: "white",
-          display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem" }}>
-          <Ico name="lock" size={22} />
-        </div>
-        <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.5rem", color: "#6f627d", margin: "0 0 0.5rem" }}>
-          Private Invite
-        </h2>
-        <p style={{ fontFamily: "'Inter',sans-serif", color: "#71717a", fontSize: "0.9rem", margin: "0 0 1.5rem" }}>
-          Enter the event code to view this invitation.
-        </p>
-        <form onSubmit={handleUnlockSubmit} style={{ display: "grid", gap: "0.75rem" }}>
-          <input className="ep-input" type="text" placeholder="Event code" value={enteredCode}
-            onChange={(e) => { setEnteredCode(e.target.value); setCodeError(""); }}
-            style={{ textAlign: "center", letterSpacing: "0.1em" }} />
-          {codeError && <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", color: "#dc2626", margin: 0 }}>{codeError}</p>}
-          <button className="ep-btn" type="submit">Unlock Invite</button>
-        </form>
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f4f4f5" }}>
+        <p style={{ fontFamily: "'Inter',sans-serif", color: "#71717a" }}>Loading…</p>
       </div>
-    </div>
-  );
+    );
+  }
 
-  /* ════════════ MAIN PAGE ════════════ */
+  if (!event) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "'Inter',sans-serif" }}>
+        <h2>Event not found</h2>
+        <p>This invite may have been removed.</p>
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <div className="ep-unlock-wrap">
+        <div className="ep-unlock-box ep-animate">
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: "#6f627d", color: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem" }}>
+            <Ico name="lock" size={22} />
+          </div>
+
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: "1.5rem", color: "#6f627d", margin: "0 0 0.5rem" }}>
+            Private Invite
+          </h2>
+
+          <p style={{ fontFamily: "'Inter',sans-serif", color: "#71717a", fontSize: "0.9rem", margin: "0 0 1.5rem" }}>
+            Enter the event code to view this invitation.
+          </p>
+
+          <form onSubmit={handleUnlockSubmit} style={{ display: "grid", gap: "0.75rem" }}>
+            <input
+              className="ep-input"
+              type="text"
+              placeholder="Event code"
+              value={enteredCode}
+              onChange={(e) => {
+                setEnteredCode(e.target.value);
+                setCodeError("");
+              }}
+              style={{ textAlign: "center", letterSpacing: "0.1em" }}
+            />
+
+            {codeError && (
+              <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", color: "#dc2626", margin: 0 }}>
+                {codeError}
+              </p>
+            )}
+
+            <button className="ep-btn" type="submit">Unlock Invite</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ep-shell ep-animate" style={{ background: event.background_color || "#f4f4f5" }}>
       <Navbar />
 
       <div className="ep-card">
-
-        <a
-          href={event.invite_image_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Click to view full invitation"
-        >
-          <img
-            src={event.invite_image_url}
-            alt="Event invite"
-            style={{
-              width: "100%",
-              display: "block",
-              maxHeight: "none",
-              objectFit: "contain",
-              background: "#fbf8fd",
-              cursor: "zoom-in",
-            }}
-          />
-        </a>
+        {event.invite_image_url && (
+          <a href={event.invite_image_url} target="_blank" rel="noopener noreferrer" title="Click to view full invitation">
+            <img
+              src={event.invite_image_url}
+              alt="Event invite"
+              style={{
+                width: "100%",
+                display: "block",
+                maxHeight: "none",
+                objectFit: "contain",
+                background: "#fbf8fd",
+                cursor: "zoom-in",
+              }}
+            />
+          </a>
+        )}
 
         <div style={{ padding: "1.75rem 1.5rem 2rem" }}>
-
-          {/* Event type tag */}
           {event.event_type && (
-            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.72rem", fontWeight: 600,
-              color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem" }}>
+            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.72rem", fontWeight: 600, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.5rem" }}>
               {event.event_type}
             </p>
           )}
 
-          {/* Title */}
-          <h1 style={{ fontFamily: "'Playfair Display',serif",
-            fontSize: "clamp(1.6rem, 5vw, 2.1rem)", fontWeight: 600,
-            color: "#6f627d", margin: "0 0 0.35rem", lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(1.6rem, 5vw, 2.1rem)", fontWeight: 600, color: "#6f627d", margin: "0 0 0.35rem", lineHeight: 1.2 }}>
             {event.event_title || "Untitled Event"}
           </h1>
 
-          {/* Honoree */}
           {event.honoree_name && (
             <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.95rem", color: "#71717a", margin: "0 0 1.25rem" }}>
               Celebrating <strong style={{ color: "#6f627d" }}>{event.honoree_name}</strong>
             </p>
           )}
 
-          {/* Detail chips */}
           <div className="ep-chip-grid">
             {event.event_date && (
               <div className="ep-chip">
@@ -534,6 +636,7 @@ function EventPage() {
                 </div>
               </div>
             )}
+
             {event.event_time && (
               <div className="ep-chip">
                 <div className="ep-chip-icon"><Ico name="time" size={15} /></div>
@@ -543,6 +646,7 @@ function EventPage() {
                 </div>
               </div>
             )}
+
             {event.location && (
               <div className="ep-chip" style={{ gridColumn: "1 / -1" }}>
                 <div className="ep-chip-icon"><Ico name="pin" size={15} /></div>
@@ -552,6 +656,7 @@ function EventPage() {
                 </div>
               </div>
             )}
+
             {event.rsvp_deadline && (
               <div className="ep-chip" style={{ gridColumn: "1 / -1" }}>
                 <div className="ep-chip-icon"><Ico name="dead" size={15} /></div>
@@ -563,7 +668,6 @@ function EventPage() {
             )}
           </div>
 
-          {/* Description */}
           {event.description && (
             <div className="ep-block">
               <p className="ep-block-label">About this event</p>
@@ -571,20 +675,22 @@ function EventPage() {
             </div>
           )}
 
-          {/* Event updates */}
           {eventUpdates.length > 0 && (
             <>
               <hr className="ep-divider" />
               <h2 className="ep-section-heading">Updates</h2>
+
               <div style={{ display: "grid", gap: "10px" }}>
                 {eventUpdates.map((item) => (
                   <div key={item.id} className="ep-update">
                     <p style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: "0.9rem", color: "#ab0dfa", margin: "0 0 4px" }}>
                       {item.title}
                     </p>
+
                     <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.88rem", color: "#52525b", whiteSpace: "pre-line", margin: "0 0 6px" }}>
                       {item.message}
                     </p>
+
                     <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.75rem", color: "#a1a1aa", margin: 0 }}>
                       {item.created_at ? new Date(item.created_at).toLocaleString() : ""}
                     </p>
@@ -594,102 +700,106 @@ function EventPage() {
             </>
           )}
 
-          {/* Guest list */}
           {event.guest_list_visibility === "public" && <GuestList rsvps={rsvps} />}
 
-          {/* ══════ RSVP ══════ */}
           <hr className="ep-divider" />
           <h2 className="ep-section-heading">RSVP</h2>
 
           {rsvpError && <div className="ep-alert error">{rsvpError}</div>}
 
-          {/* Success */}
           {rsvpSuccess && (
             <div className="ep-alert success" style={{ padding: "1.25rem 1.5rem" }}>
-              <p style={{ fontWeight: 700, fontSize: "1rem", margin: "0 0 6px" }}>🎉 You're on the list!</p>
-              <p style={{ margin: "0 0 1rem", fontSize: "0.9rem" }}>
-                Thanks for your RSVP — the host has been notified and a confirmation is on its way to your email.
+              <p style={{ fontWeight: 700, fontSize: "1rem", margin: "0 0 6px" }}>🎉 RSVP confirmed!</p>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>
+                Thanks — your RSVP was saved and a confirmation email is on its way.
               </p>
             </div>
           )}
 
-          {/* Already RSVP'd */}
           {existingRsvpFound && !rsvpSuccess && (
             <div className="ep-alert warning">
               <p style={{ fontWeight: 700, margin: "0 0 4px" }}>You've already RSVP'd</p>
               <p style={{ margin: "0 0 1rem", fontSize: "0.88rem" }}>
                 We'll send a fresh edit link to your email so you can make changes.
               </p>
+
               <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                <button className="ep-btn" style={{ width: "auto", padding: "10px 18px", fontSize: "0.88rem" }}
-                  onClick={handleRequestNewEditLink}>
+                <button className="ep-btn" style={{ width: "auto", padding: "10px 18px", fontSize: "0.88rem" }} onClick={handleRequestNewEditLink}>
                   Send me an edit link
                 </button>
-                <button className="ep-btn-ghost" style={{ width: "auto", padding: "10px 18px", fontSize: "0.88rem" }}
-                  onClick={() => { setExistingRsvpFound(false); setRsvpData((p) => ({ ...p, email: "" })); }}>
+
+                <button className="ep-btn-ghost" style={{ width: "auto", padding: "10px 18px", fontSize: "0.88rem" }} onClick={() => {
+                  setExistingRsvpFound(false);
+                  setRsvpData((p) => ({ ...p, email: "" }));
+                }}>
                   Use a different email
                 </button>
               </div>
+
               {linkRequestSuccess && (
-                <p style={{ margin: "0.75rem 0 0", fontSize: "0.88rem", fontWeight: 600 }}>✓ {linkRequestSuccess}</p>
+                <p style={{ margin: "0.75rem 0 0", fontSize: "0.88rem", fontWeight: 600 }}>
+                  ✓ {linkRequestSuccess}
+                </p>
               )}
             </div>
           )}
 
-          {/* Form */}
           {!rsvpSuccess && !existingRsvpFound && (
             <form onSubmit={handleRsvpSubmit} style={{ display: "grid", gap: "1rem" }}>
               <div>
                 <label className="ep-label">Your Name</label>
-                <input className="ep-input" type="text" name="guestName"
-                  value={rsvpData.guestName} onChange={handleRsvpChange}
-                  placeholder="Jane Smith" required />
+                <input className="ep-input" type="text" name="guestName" value={rsvpData.guestName} onChange={handleRsvpChange} placeholder="Jane Smith" required />
               </div>
+
               <div>
                 <label className="ep-label">Email</label>
-                <input className="ep-input" type="email" name="email"
-                  value={rsvpData.email} onChange={handleRsvpChange}
-                  placeholder="jane@email.com" required />
+                <input className="ep-input" type="email" name="email" value={rsvpData.email} onChange={handleRsvpChange} placeholder="jane@email.com" required />
               </div>
+
               <div>
                 <label className="ep-label">
                   Phone <span style={{ fontWeight: 400, color: "#a1a1aa" }}>(optional)</span>
                 </label>
-                <input className="ep-input" type="tel" name="phone"
-                  value={rsvpData.phone} onChange={handleRsvpChange}
-                  placeholder="(555) 000-0000" />
+                <input className="ep-input" type="tel" name="phone" value={rsvpData.phone} onChange={handleRsvpChange} placeholder="(555) 000-0000" />
               </div>
+
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer" }}>
-                <input type="checkbox" name="smsOptIn" checked={rsvpData.smsOptIn}
-                  onChange={handleRsvpChange} style={{ marginTop: 3, flexShrink: 0, width: 16, height: 16 }} />
+                <input type="checkbox" name="smsOptIn" checked={rsvpData.smsOptIn} onChange={handleRsvpChange} style={{ marginTop: 3, flexShrink: 0, width: 16, height: 16 }} />
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.82rem", color: "#52525b", lineHeight: 1.5 }}>
                   I agree to receive text updates about this event. Message &amp; data rates may apply. Reply STOP to opt out.
                 </span>
               </label>
+
               <div>
                 <label className="ep-label">Will you attend?</label>
-                <select className="ep-input" name="attending"
-                  value={rsvpData.attending} onChange={handleRsvpChange}
-                  style={{ marginTop: 6, cursor: "pointer" }}>
-                  <option value="yes">Yes, I'll be there</option>
-                  <option value="no">Sorry, I can't make it</option>
-                </select>
+
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  {["yes", "no", "maybe"].map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      className="ep-btn-ghost"
+                      style={{
+                        flex: 1,
+                        border: rsvpData.attending === o ? "2px solid #6f627d" : "",
+                      }}
+                      onClick={() => setRsvpData((p) => ({ ...p, attending: o }))}
+                    >
+                      {o === "yes" ? "Yes" : o === "no" ? "No" : "Maybe"}
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <div>
                 <label className="ep-label">Guests</label>
 
-                {/* Invite info */}
                 {(event?.allowed_children !== null || event?.allowed_adults !== null) && (
                   <p style={{ fontSize: "0.8rem", color: "#71717a", marginBottom: "0.5rem" }}>
-                    This invite includes{" "}
-                    {event.allowed_children || 0} child
-                    {event.allowed_children === 1 ? "" : "ren"} +{" "}
-                    {event.allowed_adults || 0} adult
-                    {event.allowed_adults === 1 ? "" : "s"}.
+                    This invite includes {event.allowed_children || 0} child{event.allowed_children === 1 ? "" : "ren"} + {event.allowed_adults || 0} adult{event.allowed_adults === 1 ? "" : "s"}.
                   </p>
                 )}
 
-                {/* Optional host note */}
                 {event?.guest_limit_note && (
                   <p style={{ fontSize: "0.8rem", color: "#a1a1aa", marginBottom: "0.75rem" }}>
                     {event.guest_limit_note}
@@ -699,72 +809,48 @@ function EventPage() {
                 <div style={{ display: "flex", gap: "1rem" }}>
                   <div style={{ flex: 1 }}>
                     <label className="ep-label">Children</label>
-                    <select
-                      className="ep-input"
-                      value={rsvpData.children || 0}
-                      onChange={(e) =>
-                        setRsvpData((prev) => ({
-                          ...prev,
-                          children: Number(e.target.value),
-                        }))
-                      }
-                    >
-                      {[...Array((event?.allowed_children ?? 0) + 1)].map((_, i) => (
-                        <option key={i} value={i}>
-                          {i}
-                        </option>
+                    <select className="ep-input" value={rsvpData.children} onChange={(e) => setRsvpData((prev) => ({ ...prev, children: Number(e.target.value) }))}>
+                      {[...Array((event?.allowed_children ?? 10) + 1)].map((_, i) => (
+                        <option key={i} value={i}>{i}</option>
                       ))}
                     </select>
                   </div>
 
                   <div style={{ flex: 1 }}>
                     <label className="ep-label">Adults</label>
-                    <select
-                      className="ep-input"
-                      value={rsvpData.adults || 0}
-                      onChange={(e) =>
-                        setRsvpData((prev) => ({
-                          ...prev,
-                          adults: Number(e.target.value),
-                        }))
-                      }
-                    >
-                      {[...Array((event?.allowed_adults ?? 0) + 1)].map((_, i) => (
-                        <option key={i} value={i}>
-                          {i}
-                        </option>
+                    <select className="ep-input" value={rsvpData.adults} onChange={(e) => setRsvpData((prev) => ({ ...prev, adults: Number(e.target.value) }))}>
+                      {[...Array((event?.allowed_adults ?? 10) + 1)].map((_, i) => (
+                        <option key={i} value={i}>{i}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {/* Total display */}
                 <p style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#6f627d" }}>
-                  Total guests:{" "}
-                  {(rsvpData.children || 0) + (rsvpData.adults || 0)}
+                  Total guests: {(rsvpData.children || 0) + (rsvpData.adults || 0)}
                 </p>
               </div>
+
               <div>
                 <label className="ep-label">
                   Message <span style={{ fontWeight: 400, color: "#a1a1aa" }}>(optional)</span>
                 </label>
-                <textarea className="ep-input" name="message" rows={3}
-                  value={rsvpData.message} onChange={handleRsvpChange}
-                  placeholder="Leave a note for the host…" style={{ resize: "vertical" }} />
+
+                <textarea className="ep-input" name="message" rows={3} value={rsvpData.message} onChange={handleRsvpChange} placeholder="Leave a note for the host…" style={{ resize: "vertical" }} />
               </div>
+
               <button className="ep-btn" type="submit" disabled={submitting}>
                 {submitting ? "Submitting…" : "Submit RSVP"}
               </button>
             </form>
           )}
 
-          {/* Footer upsell */}
           <div style={{ textAlign: "center", padding: "1.75rem 1rem 0.5rem", borderTop: "1px solid #e4e4e7", marginTop: "1.75rem" }}>
             <p style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", color: "#a1a1aa", margin: "0 0 0.75rem" }}>
               Powered by InvitePool
             </p>
-            <button className="ep-btn-ghost" style={{ width: "auto", padding: "10px 20px", fontSize: "0.88rem" }}
-              onClick={() => navigate("/auth")}>
+
+            <button className="ep-btn-ghost" style={{ width: "auto", padding: "10px 20px", fontSize: "0.88rem" }} onClick={() => navigate("/auth")}>
               Create your own invite →
             </button>
           </div>
