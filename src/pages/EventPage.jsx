@@ -266,6 +266,7 @@ function EventPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [existingRsvpFound, setExistingRsvpFound] = useState(false);
+  const [existingRsvpEditToken, setExistingRsvpEditToken] = useState("");
   const [linkRequestSuccess, setLinkRequestSuccess] = useState("");
 
   const [rsvpData, setRsvpData] = useState({
@@ -335,6 +336,7 @@ function EventPage() {
     setRsvpSuccess(false);
     setEditLink("");
     setExistingRsvpFound(false);
+    setExistingRsvpEditToken("");
     setSubmitting(true);
 
     const trimmedEmail = rsvpData.email.trim().toLowerCase();
@@ -364,6 +366,7 @@ function EventPage() {
 
     if (existing) {
       setExistingRsvpFound(true);
+      setExistingRsvpEditToken(existing.edit_token || "");
       setSubmitting(false);
       return;
     }
@@ -491,30 +494,31 @@ function EventPage() {
       return;
     }
 
-    const newToken = crypto.randomUUID();
+    let editTokenToSend = existingRsvpEditToken;
 
-    const { data, error } = await supabase
-      .from("rsvps")
-      .update({
-        edit_token: newToken,
-        edit_token_created_at: new Date().toISOString(),
-      })
-      .eq("event_id", id)
-      .eq("email", trimmedEmail)
-      .select("id")
-      .maybeSingle();
+    if (!editTokenToSend) {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .select("edit_token")
+        .eq("event_id", id)
+        .eq("email", trimmedEmail)
+        .maybeSingle();
 
-    if (error || !data) {
-      setRsvpError("We couldn't find an RSVP for that email.");
-      return;
+      if (error || !data?.edit_token) {
+        setRsvpError("We found your RSVP, but could not create an edit link. Please contact the host.");
+        return;
+      }
+
+      editTokenToSend = data.edit_token;
+      setExistingRsvpEditToken(data.edit_token);
     }
 
-    const freshLink = `${window.location.origin}/rsvp/edit/${newToken}`;
+    const freshLink = `${window.location.origin}/rsvp/edit/${editTokenToSend}`;
 
     try {
       await sendEmail({
         to: trimmedEmail,
-        subject: `Your RSVP edit link — ${event.event_title}`,
+        subject: `Your RSVP edit link - ${event.event_title}`,
         html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
           <h2>Your RSVP edit link</h2>
           <p>Click below to update your RSVP for <strong>${event.event_title}</strong>:</p>
@@ -524,7 +528,7 @@ function EventPage() {
 
       setLinkRequestSuccess("A fresh edit link has been sent to your email.");
     } catch {
-      setRsvpError("The link was created but the email didn't send.");
+      setRsvpError("We found your RSVP, but the edit link email did not send. Please try again.");
     }
   }
 
