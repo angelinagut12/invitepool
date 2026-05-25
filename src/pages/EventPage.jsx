@@ -399,14 +399,43 @@ function EventPage() {
     fetchRsvps();
 
     try {
+      const status = rsvpData.attending?.toLowerCase();
+      const emailContent = {
+        yes: {
+          subject: `You're RSVP'd - ${event.event_title}`,
+          heading: "You're on the list!",
+          message: `Your RSVP for <strong>${event.event_title}</strong> has been received.`,
+          extra: "",
+          label: "Attending",
+        },
+        no: {
+          subject: `RSVP received - ${event.event_title}`,
+          heading: "We're sad you can't make it",
+          message: `Your RSVP for <strong>${event.event_title}</strong> has been received as <strong>Not Attending</strong>.`,
+          extra: "",
+          label: "Not Attending",
+        },
+        maybe: {
+          subject: `RSVP received - ${event.event_title}`,
+          heading: "Thanks for letting us know",
+          message: `Your RSVP for <strong>${event.event_title}</strong> has been received as <strong>Maybe</strong>.`,
+          extra: event.rsvp_deadline
+            ? "Don't forget to finalize your RSVP before the RSVP deadline."
+            : "You can use the edit link below when you are ready to finalize your RSVP.",
+          label: "Maybe",
+        },
+      };
+      const copy = emailContent[status] || emailContent.yes;
+
       await sendEmail({
         to: trimmedEmail,
-        subject: `You're RSVP'd — ${event.event_title}`,
+        subject: copy.subject,
         html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
-          <h2 style="color:#6f627d;">You're on the list! 🎉</h2>
+          <h2 style="color:#6f627d;">${copy.heading}</h2>
           <p>Hi ${rsvpData.guestName || "there"},</p>
-          <p>Your RSVP for <strong>${event.event_title}</strong> has been received.</p>
-          <p><strong>Status:</strong> ${rsvpData.attending}</p>
+          <p>${copy.message}</p>
+          ${copy.extra ? `<p>${copy.extra}</p>` : ""}
+          <p><strong>Status:</strong> ${copy.label}</p>
           <p><strong>Party size:</strong> ${adults + children}</p>
           <p><strong>Breakdown:</strong> ${adults} adult(s), ${children} kid(s)</p>
           <a href="${editUrl}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#6f627d;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Edit My RSVP</a>
