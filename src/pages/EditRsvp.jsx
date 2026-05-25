@@ -132,24 +132,58 @@ function EditRsvp() {
         return;
       }
 
-      const { error } = await supabase
-        .from("rsvps")
-        .update({
-          guest_name: rsvpData.guestName,
-          email: trimmedEmail,
-          phone: rsvpData.phone?.trim() || null,
-          attending: rsvpData.attending,
-          adults,
-          children,
-          guest_count: adults + children,
-          message: rsvpData.message,
-          sms_opt_in: rsvpData.smsOptIn,
-          sms_opt_in_at: rsvpData.smsOptIn ? new Date().toISOString() : null,
-        })
-        .eq("id", rsvpId)
-        .eq("edit_token", token);
+      let updatedRsvp = null;
 
-      if (error) throw error;
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "update_rsvp_by_token",
+        {
+          p_edit_token: token,
+          p_guest_name: rsvpData.guestName,
+          p_email: trimmedEmail,
+          p_phone: rsvpData.phone?.trim() || "",
+          p_attending: rsvpData.attending,
+          p_adults: adults,
+          p_children: children,
+          p_message: rsvpData.message,
+          p_sms_opt_in: rsvpData.smsOptIn,
+        }
+      );
+
+      if (!rpcError) {
+        updatedRsvp = rpcData;
+      } else if (rpcError.message?.toLowerCase().includes("function")) {
+        const { data: directData, error: directError } = await supabase
+          .from("rsvps")
+          .update({
+            guest_name: rsvpData.guestName,
+            email: trimmedEmail,
+            phone: rsvpData.phone?.trim() || null,
+            attending: rsvpData.attending,
+            adults,
+            children,
+            guest_count: adults + children,
+            message: rsvpData.message,
+            sms_opt_in: rsvpData.smsOptIn,
+            sms_opt_in_at: rsvpData.smsOptIn ? new Date().toISOString() : null,
+          })
+          .eq("id", rsvpId)
+          .eq("edit_token", token)
+          .select("id, attending, adults, children, guest_count")
+          .maybeSingle();
+
+        if (directError) throw directError;
+        updatedRsvp = directData;
+      } else {
+        throw rpcError;
+      }
+
+      if (!updatedRsvp) {
+        setRsvpError(
+          "Your RSVP could not be updated. Please contact the host or try again from your latest edit link."
+        );
+        setSaving(false);
+        return;
+      }
 
       if (eventDetails?.notify_host_on_rsvp_update && eventDetails?.host_email) {
         try {
