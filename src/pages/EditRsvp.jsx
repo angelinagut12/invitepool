@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import { sendEmail } from "../utils/sendEmail";
 
 function EditRsvp() {
   const { token } = useParams();
@@ -13,6 +14,7 @@ function EditRsvp() {
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpSuccess, setRsvpSuccess] = useState("");
   const [eventTitle, setEventTitle] = useState("");
+  const [eventDetails, setEventDetails] = useState(null);
   const [rsvpId, setRsvpId] = useState(null);
 
   const [rsvpData, setRsvpData] = useState({
@@ -50,7 +52,10 @@ function EditRsvp() {
           message,
           sms_opt_in,
           events (
-            event_title
+            id,
+            event_title,
+            host_email,
+            notify_host_on_rsvp_update
           )
         `)
         .eq("edit_token", token)
@@ -65,6 +70,7 @@ function EditRsvp() {
 
       setRsvpId(data.id);
       setEventTitle(data.events?.event_title || "Event");
+      setEventDetails(data.events || null);
 
       setRsvpData({
         guestName: data.guest_name || "",
@@ -89,6 +95,12 @@ function EditRsvp() {
     if (value === true || value === "true" || value === "yes") return "yes";
     if (value === "maybe") return "maybe";
     return "no";
+  }
+
+  function getStatusLabel(value) {
+    if (value === "yes") return "Attending";
+    if (value === "maybe") return "Maybe";
+    return "Not Attending";
   }
 
   function handleRsvpChange(e) {
@@ -138,6 +150,28 @@ function EditRsvp() {
         .eq("edit_token", token);
 
       if (error) throw error;
+
+      if (eventDetails?.notify_host_on_rsvp_update && eventDetails?.host_email) {
+        try {
+          await sendEmail({
+            to: eventDetails.host_email,
+            subject: `${rsvpData.guestName || "A guest"} updated their RSVP - ${eventTitle}`,
+            html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+              <h2>RSVP Updated</h2>
+              <p><strong>${rsvpData.guestName || "A guest"}</strong> updated their RSVP for <strong>${eventTitle}</strong>.</p>
+              <p><strong>Status:</strong> ${getStatusLabel(rsvpData.attending)}</p>
+              <p><strong>Party size:</strong> ${adults + children}</p>
+              <p><strong>Breakdown:</strong> ${adults} adult(s), ${children} kid(s)</p>
+              <p><strong>Email:</strong> ${trimmedEmail}</p>
+              <p><strong>Phone:</strong> ${rsvpData.phone?.trim() || "Not provided"}</p>
+              <p><strong>Message:</strong> ${rsvpData.message || "No message"}</p>
+              <a href="${window.location.origin}/host/event/${eventDetails.id}" style="color:#6f627d;">Open Host Dashboard</a>
+            </div>`,
+          });
+        } catch (emailError) {
+          console.error("Host RSVP update email failed:", emailError.message);
+        }
+      }
 
       setRsvpSuccess("Your RSVP has been updated successfully.");
     } catch (error) {
