@@ -63,6 +63,12 @@ if (!document.getElementById("host-theme")) {
       transform: translateY(-2px);
     }
 
+    .host-card.past {
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      opacity: 0.82;
+    }
+
     .host-card-title {
       font-family: 'Playfair Display', serif;
       font-size: 1.3rem;
@@ -96,8 +102,61 @@ if (!document.getElementById("host-theme")) {
     .host-btn-ghost:hover {
       background: #f4eff9;
     }
+
+    .host-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #4b5563;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 0.65rem;
+    }
   `;
   document.head.appendChild(style);
+}
+
+function getEventDate(event) {
+  if (!event.event_date) return null;
+
+  const [year, month, day] = event.event_date.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isPastEvent(event) {
+  const eventDate = getEventDate(event);
+  if (!eventDate) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+
+  return eventDate < today;
+}
+
+function sortEventsByDate(events) {
+  return [...events].sort((a, b) => {
+    const aPast = isPastEvent(a);
+    const bPast = isPastEvent(b);
+
+    if (aPast !== bPast) return aPast ? 1 : -1;
+
+    const aDate = getEventDate(a);
+    const bDate = getEventDate(b);
+
+    if (!aDate && !bDate) return 0;
+    if (!aDate) return 1;
+    if (!bDate) return -1;
+
+    const aTime = aDate.getTime();
+    const bTime = bDate.getTime();
+
+    if (aPast && bPast) return bTime - aTime;
+    return aTime - bTime;
+  });
 }
 
 export default function HostEvents() {
@@ -130,7 +189,7 @@ export default function HostEvents() {
 
       if (error) throw error;
 
-      setEvents(data || []);
+      setEvents(sortEventsByDate(data || []));
     } catch (error) {
       console.error("Error loading host events:", error.message);
     } finally {
@@ -165,8 +224,13 @@ export default function HostEvents() {
           </div>
         ) : (
           <div style={{ display: "grid", gap: "1rem" }}>
-            {events.map((event) => (
-              <div key={event.id} className="host-card">
+            {events.map((event) => {
+              const pastEvent = isPastEvent(event);
+
+              return (
+              <div key={event.id} className={`host-card${pastEvent ? " past" : ""}`}>
+
+                {pastEvent && <span className="host-badge">Past Event</span>}
 
                 <h2 className="host-card-title">
                   {event.event_title || "Untitled Event"}
@@ -199,7 +263,8 @@ export default function HostEvents() {
                 </div>
 
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

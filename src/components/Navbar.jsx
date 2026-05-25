@@ -94,6 +94,7 @@ const navInner = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
+  minHeight: "64px",
 };
 
 const logoButton = {
@@ -116,6 +117,11 @@ const menuButton = {
   fontSize: "1.3rem",
   fontWeight: "700",
   cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  padding: 0,
 };
 
 const dropdown = {

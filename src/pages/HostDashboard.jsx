@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../components/supabaseClient";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { sendEmail } from "../utils/sendEmail";
 
 if (!document.getElementById("host-dashboard-styles")) {
   const style = document.createElement("style");
@@ -145,6 +146,7 @@ export default function HostDashboard() {
   const [event, setEvent] = useState(null);
   const [rsvps, setRsvps] = useState([]);
   const [showAddRsvp, setShowAddRsvp] = useState(false);
+  const [showGuestResponses, setShowGuestResponses] = useState(true);
   const [editingRsvpId, setEditingRsvpId] = useState(null);
 
   const [manualRsvp, setManualRsvp] = useState({
@@ -158,7 +160,9 @@ export default function HostDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [copyMessage, setCopyMessage] = useState("");
-
+  const [showGuestBreakdown, setShowGuestBreakdown] = useState(false);
+  const [showContactsPanel, setShowContactsPanel] = useState(false);
+  const [showUpdatesPanel, setShowUpdatesPanel] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -168,6 +172,10 @@ export default function HostDashboard() {
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateMessage, setUpdateMessage] = useState("");
   const [updateStatus, setUpdateStatus] = useState("");
+  const [notifyGuests, setNotifyGuests] = useState(false);
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const rsvpFormRef = useRef(null);
+  const firstRsvpInputRef = useRef(null);
 
   const [user, setUser] = useState(null);
 
@@ -278,6 +286,7 @@ export default function HostDashboard() {
     }
 
     try {
+      setSendingUpdate(true);
       const { data, error } = await supabase
         .from("event_updates")
         .insert([
@@ -293,15 +302,62 @@ export default function HostDashboard() {
 
       if (error) throw error;
 
+      let notifiedCount = 0;
+
+      if (notifyGuests) {
+        const guestsToNotify = rsvps.filter((guest) => {
+          const status = getStatus(guest.attending);
+          return (
+            (status === "yes" || status === "maybe") &&
+            guest.email &&
+            guest.email.trim()
+          );
+        });
+
+        if (guestsToNotify.length > 0) {
+          const publicLink = `${window.location.origin}/event/${event.id}`;
+
+          const results = await Promise.allSettled(
+            guestsToNotify.map((guest) =>
+              sendEmail({
+                to: guest.email.trim().toLowerCase(),
+                subject: `Update for ${event.event_title || "your event"}: ${trimmedTitle}`,
+                html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+                  <h2 style="color:#6f627d;">${trimmedTitle}</h2>
+                  <p>Hi ${guest.guest_name || "there"},</p>
+                  <p>There is an update for <strong>${event.event_title || "your event"}</strong>.</p>
+                  <p style="white-space:pre-line;">${trimmedMessage}</p>
+                  <a href="${publicLink}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#6f627d;color:white;border-radius:10px;text-decoration:none;font-weight:600;">View Invite</a>
+                </div>`,
+              })
+            )
+          );
+
+          notifiedCount = results.filter((result) => result.status === "fulfilled").length;
+
+          const failedCount = results.length - notifiedCount;
+          if (failedCount > 0) {
+            console.error(`${failedCount} update email(s) failed to send.`);
+          }
+        }
+      }
+
       setEventUpdates((prev) => [data, ...prev]);
       setUpdateTitle("");
       setUpdateMessage("");
-      setUpdateStatus("Update posted!");
-      setTimeout(() => setUpdateStatus(""), 2000);
+      setNotifyGuests(false);
+      setUpdateStatus(
+        notifyGuests
+          ? `Update posted and emailed to ${notifiedCount} guest${notifiedCount === 1 ? "" : "s"}.`
+          : "Update posted!"
+      );
+      setTimeout(() => setUpdateStatus(""), 3500);
     } catch (error) {
       console.error("Error posting update:", error.message);
       setUpdateStatus("Could not post update.");
       setTimeout(() => setUpdateStatus(""), 2000);
+    } finally {
+      setSendingUpdate(false);
     }
   }
   async function handleAddManualRsvp(e) {
@@ -372,6 +428,11 @@ export default function HostDashboard() {
         message: guest.message || "",
       });
     setShowAddRsvp(false);
+
+    window.requestAnimationFrame(() => {
+      rsvpFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      firstRsvpInputRef.current?.focus();
+    });
   }
 
   async function handleUpdateRsvp(e) {
@@ -453,15 +514,36 @@ export default function HostDashboard() {
   const stats = useMemo(() => {
     const total = rsvps.length;
 
-    const attending = rsvps.filter(r => r.attending === "yes").length;
-    const maybe = rsvps.filter(r => r.attending === "maybe").length;
-    const notAttending = rsvps.filter(r => r.attending === "no").length;
+    const attendingRsvps = rsvps.filter((r) => r.attending === "yes");
 
-    const totalAttendingGuests = rsvps
-      .filter(r => r.attending === "yes")
-      .reduce((sum, r) => sum + Number(r.guest_count || 0), 0);
+    const attending = attendingRsvps.length;
+    const maybe = rsvps.filter((r) => r.attending === "maybe").length;
+    const notAttending = rsvps.filter((r) => r.attending === "no").length;
 
-    return { total, attending, maybe, notAttending, totalAttendingGuests };
+    const totalAttendingGuests = attendingRsvps.reduce(
+      (sum, r) => sum + Number(r.guest_count || 0),
+      0
+    );
+
+    const adultsAttending = attendingRsvps.reduce(
+      (sum, r) => sum + Number(r.adults || 0),
+      0
+    );
+
+    const kidsAttending = attendingRsvps.reduce(
+      (sum, r) => sum + Number(r.children || 0),
+      0
+    );
+
+    return {
+      total,
+      attending,
+      maybe,
+      notAttending,
+      totalAttendingGuests,
+      adultsAttending,
+      kidsAttending,
+    };
   }, [rsvps]);
 
   async function copyInviteLink() {
@@ -676,77 +758,158 @@ You can optionally opt in for event text updates on the RSVP form.`;
           <StatCard label="Attending" value={stats.attending} />
           <StatCard label="Maybe" value={stats.maybe} />
           <StatCard label="Not Attending" value={stats.notAttending} />
-          <StatCard label="Guests Attending" value={stats.totalAttendingGuests} />
+          <StatCard
+            label="Guests Attending"
+            value={stats.totalAttendingGuests}
+            onClick={() => setShowGuestBreakdown((prev) => !prev)}
+            active={showGuestBreakdown}
+          />
         </div>
 
-        <DashboardSection title="Invite Contacts">
-          <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
-            <input className="host-input" type="text" placeholder="Guest name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-            <input className="host-input" type="tel" placeholder="Phone number" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
-            <button className="host-btn" onClick={addContact}>Add Contact</button>
-            {contactSuccess && <p className="host-text">{contactSuccess}</p>}
-          </div>
+        {showGuestBreakdown && (
+            <div className="host-card" style={{ marginBottom: "2rem" }}>
+              <h2 className="host-section-title">Guest Breakdown</h2>
 
-          {contacts.length === 0 ? (
-            <p className="host-text">No contacts added yet.</p>
-          ) : (
-            <div style={{ display: "grid", gap: "1rem" }}>
-              {contacts.map((contact) => (
-                <div key={contact.id} className="host-list-card">
-                  <div>
-                    <p className="host-list-title">{contact.name}</p>
-                    <p className="host-text">{contact.phone || "No phone yet"}</p>
-                  </div>
-
-                  <div className="host-actions">
-                    <button
-                      className="host-btn-ghost"
-                      onClick={() => shareInviteToContact(contact)}
-                      disabled={!contact.phone}
-                    >
-                      Share Invite
-                    </button>
-                    <button className="host-danger-btn" onClick={() => removeContact(contact.id)}>
-                      Remove
-                    </button>
-                  </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                  gap: "1rem",
+                }}
+              >
+                <div>
+                  <p className="host-muted">Adults Going</p>
+                  <h3 style={{ margin: 0, fontSize: "2rem", color: "#6f627d" }}>
+                    {stats.adultsAttending}
+                  </h3>
                 </div>
-              ))}
+
+                <div>
+                  <p className="host-muted">Kids Going</p>
+                  <h3 style={{ margin: 0, fontSize: "2rem", color: "#6f627d" }}>
+                    {stats.kidsAttending}
+                  </h3>
+                </div>
+
+                <div>
+                  <p className="host-muted">Total Guests Going</p>
+                  <h3 style={{ margin: 0, fontSize: "2rem", color: "#6f627d" }}>
+                    {stats.totalAttendingGuests}
+                  </h3>
+                </div>
+              </div>
             </div>
+          )}
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+        <DashboardSection title="Invite Contacts" style={{ order: 3 }}>
+          <button
+            className="host-btn-ghost"
+            type="button"
+            onClick={() => setShowContactsPanel((prev) => !prev)}
+            style={{ marginBottom: showContactsPanel ? "1rem" : 0 }}
+          >
+            {showContactsPanel ? "Hide invite contacts" : "Need to invite by text?"}
+          </button>
+
+          {showContactsPanel && (
+            <>
+              <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
+                <input className="host-input" type="text" placeholder="Guest name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+                <input className="host-input" type="tel" placeholder="Phone number" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                <button className="host-btn" onClick={addContact}>Add Contact</button>
+                {contactSuccess && <p className="host-text">{contactSuccess}</p>}
+              </div>
+
+              {contacts.length === 0 ? (
+                <p className="host-text">No contacts added yet.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {contacts.map((contact) => (
+                    <div key={contact.id} className="host-list-card">
+                      <div>
+                        <p className="host-list-title">{contact.name}</p>
+                        <p className="host-text">{contact.phone || "No phone yet"}</p>
+                      </div>
+
+                      <div className="host-actions">
+                        <button
+                          className="host-btn-ghost"
+                          onClick={() => shareInviteToContact(contact)}
+                          disabled={!contact.phone}
+                        >
+                          Share Invite
+                        </button>
+                        <button className="host-danger-btn" onClick={() => removeContact(contact.id)}>
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </DashboardSection>
 
-        <DashboardSection title="Event Updates">
-          <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
-            <input className="host-input" type="text" placeholder="Update title" value={updateTitle} onChange={(e) => setUpdateTitle(e.target.value)} />
-            <textarea className="host-input" placeholder="Write your update here..." value={updateMessage} onChange={(e) => setUpdateMessage(e.target.value)} rows="4" />
-            <button className="host-btn" onClick={addEventUpdate}>Post Update</button>
-            {updateStatus && <p className="host-text">{updateStatus}</p>}
-          </div>
+        <DashboardSection title="Event Updates" style={{ order: 2 }}>
+          <button
+            className="host-btn-ghost"
+            type="button"
+            onClick={() => setShowUpdatesPanel((prev) => !prev)}
+            style={{ marginBottom: showUpdatesPanel ? "1rem" : 0 }}
+          >
+            {showUpdatesPanel ? "Hide event update tools" : "Need to make an update?"}
+          </button>
 
-          {eventUpdates.length === 0 ? (
-            <p className="host-text">No updates posted yet.</p>
-          ) : (
-            <div style={{ display: "grid", gap: "1rem" }}>
-              {eventUpdates.map((item) => (
-                <div key={item.id} className="host-list-card">
-                  <div>
-                    <h3 className="host-list-title">{item.title}</h3>
-                    <p className="host-text" style={{ whiteSpace: "pre-line" }}>{item.message}</p>
-                    <p className="host-muted">
-                      {item.created_at ? new Date(item.created_at).toLocaleString() : "Unknown"}
-                    </p>
-                  </div>
-                  <button className="host-danger-btn" onClick={() => deleteEventUpdate(item.id)}>
-                    Delete
-                  </button>
+          {showUpdatesPanel && (
+            <>
+              <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
+                <input className="host-input" type="text" placeholder="Update title" value={updateTitle} onChange={(e) => setUpdateTitle(e.target.value)} />
+                <textarea className="host-input" placeholder="Write your update here..." value={updateMessage} onChange={(e) => setUpdateMessage(e.target.value)} rows="4" />
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", color: "#6f627d", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={notifyGuests}
+                    onChange={(e) => setNotifyGuests(e.target.checked)}
+                    style={{ marginTop: "0.2rem", width: 16, height: 16 }}
+                  />
+                  <span>Notify guests by email</span>
+                </label>
+                <p className="host-muted" style={{ marginTop: "-0.5rem" }}>
+                  Sends only to guests marked Yes or Maybe who have an email address.
+                </p>
+                <button className="host-btn" onClick={addEventUpdate} disabled={sendingUpdate}>
+                  {sendingUpdate ? "Posting..." : "Post Update"}
+                </button>
+                {updateStatus && <p className="host-text">{updateStatus}</p>}
+              </div>
+
+              {eventUpdates.length === 0 ? (
+                <p className="host-text">No updates posted yet.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {eventUpdates.map((item) => (
+                    <div key={item.id} className="host-list-card">
+                      <div>
+                        <h3 className="host-list-title">{item.title}</h3>
+                        <p className="host-text" style={{ whiteSpace: "pre-line" }}>{item.message}</p>
+                        <p className="host-muted">
+                          {item.created_at ? new Date(item.created_at).toLocaleString() : "Unknown"}
+                        </p>
+                      </div>
+                      <button className="host-danger-btn" onClick={() => deleteEventUpdate(item.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </DashboardSection>
 
-        <DashboardSection title="Guest Responses">
+        <DashboardSection title="Guest Responses" style={{ order: 1 }}>
           <button
             className="host-btn"
             onClick={() => {
@@ -767,30 +930,47 @@ You can optionally opt in for event text updates on the RSVP form.`;
             {showAddRsvp ? "Cancel" : "+ Add RSVP Manually"}
           </button>
 
+          <button
+            className="host-btn-ghost"
+            type="button"
+            onClick={() => setShowGuestResponses((prev) => !prev)}
+            style={{ marginBottom: "1rem", marginLeft: "0.75rem" }}
+          >
+            {showGuestResponses ? "Hide guest list" : `Show guest list (${rsvps.length})`}
+          </button>
+
           {(showAddRsvp || editingRsvpId) && (
             <form
+              ref={rsvpFormRef}
               onSubmit={editingRsvpId ? handleUpdateRsvp : handleAddManualRsvp}
               style={{ display: "grid", gap: "1rem", marginBottom: "1.5rem" }}
             >
              <div style={{ display: "flex", gap: "1rem" }}>
-              <input
-                className="host-input"
-                type="number"
-                min="0"
-                placeholder="Adults"
-                value={manualRsvp.adults}
-                onChange={(e) =>
-                  setManualRsvp({ ...manualRsvp, adults: e.target.value })
-                }
-              />
-              <input
-                className="host-input"
-                type="number"
-                min="0"
-                placeholder="Kids"
-                value={manualRsvp.children}
-                onChange={(e) => setManualRsvp({ ...manualRsvp, children: e.target.value })}
-              />
+              <label style={{ flex: 1, color: "#6f627d", fontWeight: 600 }}>
+                Adults
+                <input
+                  ref={firstRsvpInputRef}
+                  className="host-input"
+                  type="number"
+                  min="0"
+                  placeholder="Adults"
+                  value={manualRsvp.adults}
+                  onChange={(e) =>
+                    setManualRsvp({ ...manualRsvp, adults: e.target.value })
+                  }
+                />
+              </label>
+              <label style={{ flex: 1, color: "#6f627d", fontWeight: 600 }}>
+                Kids
+                <input
+                  className="host-input"
+                  type="number"
+                  min="0"
+                  placeholder="Kids"
+                  value={manualRsvp.children}
+                  onChange={(e) => setManualRsvp({ ...manualRsvp, children: e.target.value })}
+                />
+              </label>
             </div>
 
               <input
@@ -863,7 +1043,11 @@ You can optionally opt in for event text updates on the RSVP form.`;
             </form>
           )}
 
-          {rsvps.length === 0 ? (
+          {!showGuestResponses ? (
+            <p className="host-text">
+              Guest list hidden. {rsvps.length} response{rsvps.length === 1 ? "" : "s"} saved.
+            </p>
+          ) : rsvps.length === 0 ? (
             <p className="host-text">No responses yet.</p>
           ) : (
             <div style={{ display: "grid", gap: "1rem" }}>
@@ -927,24 +1111,38 @@ You can optionally opt in for event text updates on the RSVP form.`;
             </div>
           )}
         </DashboardSection>
+        </div>
         <Footer />
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, onClick, active }) {
   return (
-    <div className="host-card" style={{ textAlign: "center" }}>
-      <p className="host-text" style={{ marginBottom: "0.5rem" }}>{label}</p>
-      <h3 style={{ margin: 0, fontSize: "2rem", color: "#6f627d" }}>{value}</h3>
-    </div>
+    <button
+      type="button"
+      className="host-card"
+      onClick={onClick}
+      style={{
+        textAlign: "center",
+        border: active ? "2px solid #6f627d" : "1px solid #e8dff0",
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
+      <p className="host-text" style={{ marginBottom: "0.5rem" }}>
+        {label}
+      </p>
+      <h3 style={{ margin: 0, fontSize: "2rem", color: "#6f627d" }}>
+        {value}
+      </h3>
+    </button>
   );
 }
 
-function DashboardSection({ title, children }) {
+function DashboardSection({ title, children, style }) {
   return (
-    <div className="host-card" style={{ marginBottom: "2rem" }}>
+    <div className="host-card" style={{ marginBottom: "2rem", ...style }}>
       <h2 className="host-section-title">{title}</h2>
       {children}
     </div>

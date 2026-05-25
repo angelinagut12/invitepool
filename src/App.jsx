@@ -9,6 +9,7 @@ import HostEvents from "./pages/HostEvents";
 import EditRsvp from "./pages/EditRsvp";
 import FindInvite from "./pages/FindInvite";
 import MyInvites from "./pages/MyInvites";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/host/event/:id" element={<HostDashboard />} />
         <Route path="/edit/event/:id" element={<EditEvent />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/host/events" element={<HostEvents />} />
         <Route path="/rsvp/edit/:token" element={<EditRsvp />} />
         <Route path="/find-invite" element={<FindInvite />} />

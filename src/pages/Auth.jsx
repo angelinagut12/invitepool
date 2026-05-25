@@ -14,6 +14,20 @@ function Auth() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  function getFriendlyAuthError(message) {
+    const normalizedMessage = message?.toLowerCase() || "";
+
+    if (normalizedMessage.includes("email not confirmed")) {
+      return "Please verify your email before logging in. Check your inbox for the InvitePool confirmation email, then click the verification link.";
+    }
+
+    if (normalizedMessage.includes("email rate limit exceeded")) {
+      return "A verification email was already sent. Please check your inbox or spam folder, then wait a few minutes before requesting another one.";
+    }
+
+    return message || "Something went wrong.";
+  }
+
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -45,11 +59,16 @@ function Auth() {
         const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            emailRedirectTo: window.location.origin + "/auth/callback",
+          },
         });
 
         if (error) throw error;
 
-        setSuccessMessage("Account created successfully. You can now log in.");
+        setSuccessMessage(
+          "Account created. Please check your email and click the verification link before logging in."
+        );
         setIsLogin(true);
         setFormData({
           email: formData.email,
@@ -58,7 +77,7 @@ function Auth() {
       }
     } catch (error) {
       console.error("Auth error:", error.message);
-      setErrorMessage(error.message || "Something went wrong.");
+      setErrorMessage(getFriendlyAuthError(error.message));
     } finally {
       setLoading(false);
     }
@@ -128,7 +147,7 @@ function Auth() {
       >
         {isLogin
           ? "Log in to manage your events."
-          : "Create an account to host and manage invites."}
+          : "Create an account, then verify your email before logging in."}
       </p>
 
       {errorMessage && (
@@ -164,6 +183,23 @@ function Auth() {
       )}
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
+        {!isLogin && (
+          <div
+            style={{
+              background: "#f5f3ff",
+              color: "#6f627d",
+              border: "1px solid #ddd6fe",
+              padding: "12px",
+              borderRadius: "10px",
+              fontSize: "0.9rem",
+              lineHeight: "1.4",
+            }}
+          >
+            After you create your account, InvitePool will email you a verification
+            link. You will need to click that link before logging in.
+          </div>
+        )}
+
         <div>
           <label style={{ color: "#6f627d", fontWeight: "500" }}>
             Email

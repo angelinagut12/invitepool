@@ -340,6 +340,12 @@ function EventPage() {
     const adults = Number(rsvpData.adults || 0);
     const children = Number(rsvpData.children || 0);
 
+    if (!trimmedEmail) {
+      setRsvpError("Email is required so you can edit your RSVP later.");
+      setSubmitting(false);
+      return;
+    }
+
     if (adults + children < 1) {
       setRsvpError("Please select at least 1 adult or child.");
       setSubmitting(false);
@@ -527,6 +533,28 @@ function EventPage() {
       year: "numeric",
     });
   }
+  function handleAddToCalendar() {
+    if (!event?.event_date) return;
+
+    const start = new Date(
+      `${event.event_date}T${event.event_time || "12:00"}`
+    );
+
+    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+    const formatGoogleDate = (date) =>
+      date.toISOString().replace(/-|:|\.\d+/g, "");
+
+    const googleUrl =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+      `&text=${encodeURIComponent(event.event_title || "Event")}` +
+      `&dates=${formatGoogleDate(start)}/${formatGoogleDate(end)}` +
+      `&details=${encodeURIComponent(event.description || "")}` +
+      `&location=${encodeURIComponent(event.location || "")}`;
+
+    window.open(googleUrl, "_blank");
+  }
+  
 
   if (loading) {
     return (
@@ -674,6 +702,34 @@ function EventPage() {
               <p className="ep-block-text">{event.description}</p>
             </div>
           )}
+          
+          <div
+            onClick={handleAddToCalendar}
+            title="Add to Calendar"
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              border: "1px solid #e4d8ef",
+              background: "#fbf8fd",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              marginTop: "1rem",
+              color: "#6f627d",
+              fontSize: "1.2rem",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#eee7f5";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fbf8fd";
+            }}
+          >
+            📅
+          </div>
 
           {eventUpdates.length > 0 && (
             <>
@@ -752,8 +808,28 @@ function EventPage() {
               </div>
 
               <div>
-                <label className="ep-label">Email</label>
-                <input className="ep-input" type="email" name="email" value={rsvpData.email} onChange={handleRsvpChange} placeholder="jane@email.com" required />
+                <label className="ep-label">
+                  Email <span style={{ color: "#b91c1c" }}>*</span>
+                </label>
+                <input
+                  className="ep-input"
+                  type="email"
+                  name="email"
+                  value={rsvpData.email}
+                  onChange={handleRsvpChange}
+                  onInvalid={(e) =>
+                    e.currentTarget.setCustomValidity(
+                      "Email is required so you can edit your RSVP later."
+                    )
+                  }
+                  onInput={(e) => e.currentTarget.setCustomValidity("")}
+                  placeholder="jane@email.com"
+                  required
+                  aria-describedby="rsvp-email-help"
+                />
+                <p id="rsvp-email-help" style={{ margin: "0.4rem 0 0", fontSize: "0.8rem", color: "#71717a" }}>
+                  Email is required so you can edit your RSVP later.
+                </p>
               </div>
 
               <div>
