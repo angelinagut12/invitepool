@@ -279,6 +279,9 @@ function EventPage() {
     children: 0,
   });
 
+  const hasGuestLimit =
+    event?.allowed_children != null || event?.allowed_adults != null;
+
   useEffect(() => {
     fetchEvent();
     fetchRsvps();
@@ -870,9 +873,13 @@ function EventPage() {
               <div>
                 <label className="ep-label">Guests</label>
 
-                {(event?.allowed_children !== null || event?.allowed_adults !== null) && (
+                {hasGuestLimit ? (
                   <p style={{ fontSize: "0.8rem", color: "#71717a", marginBottom: "0.5rem" }}>
                     This invite includes {event.allowed_children || 0} child{event.allowed_children === 1 ? "" : "ren"} + {event.allowed_adults || 0} adult{event.allowed_adults === 1 ? "" : "s"}.
+                  </p>
+                ) : (
+                  <p style={{ fontSize: "0.8rem", color: "#71717a", marginBottom: "0.5rem" }}>
+                    This invite does not have a guest limit. Please enter who is included in your RSVP.
                   </p>
                 )}
 

@@ -19,6 +19,7 @@ export default function CreateEvent() {
     guestListVisibility: "private",
     eventCode: "",
 
+    noGuestLimit: true,
     allowedChildren: 1,
     allowedAdults: 2,
     guestLimitNote: "",
@@ -101,8 +102,8 @@ export default function CreateEvent() {
         event_code: formData.eventCode,
         created_by: user.id,
 
-        allowed_children: Number(formData.allowedChildren || 0),
-        allowed_adults: Number(formData.allowedAdults || 0),
+        allowed_children: formData.noGuestLimit ? null : Number(formData.allowedChildren || 0),
+        allowed_adults: formData.noGuestLimit ? null : Number(formData.allowedAdults || 0),
         guest_limit_note: formData.guestLimitNote || "",
 
         host_email: formData.hostEmail.trim() || null,
@@ -292,11 +293,27 @@ export default function CreateEvent() {
               <div className="form-group">
                 <h3 style={{ marginBottom: "0.5rem" }}>Guest Limits</h3>
                 <p style={{ fontSize: "0.9rem", color: "#777" }}>
-                  Control how many guests each invite includes.
+                  Use no limit for open RSVPs, or set adult/kid limits for each invite.
                 </p>
               </div>
 
-              <div style={{ display: "flex", gap: "1rem" }}>
+              <div className="form-group">
+                <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontWeight: "500", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    name="noGuestLimit"
+                    checked={formData.noGuestLimit}
+                    onChange={handleChange}
+                    style={{ width: "18px", height: "18px" }}
+                  />
+                  <span>No guest limit</span>
+                </label>
+                <p style={{ fontSize: "0.85rem", color: "#777", marginTop: "0.4rem" }}>
+                  Guests can still enter adults and kids, but InvitePool will not cap the invite.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", opacity: formData.noGuestLimit ? 0.55 : 1 }}>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label>Children Allowed</label>
                   <input
@@ -305,6 +322,7 @@ export default function CreateEvent() {
                     value={formData.allowedChildren}
                     onChange={handleChange}
                     min="0"
+                    disabled={formData.noGuestLimit}
                   />
                 </div>
 
@@ -316,6 +334,7 @@ export default function CreateEvent() {
                     value={formData.allowedAdults}
                     onChange={handleChange}
                     min="0"
+                    disabled={formData.noGuestLimit}
                   />
                 </div>
               </div>
