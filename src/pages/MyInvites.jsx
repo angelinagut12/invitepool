@@ -87,7 +87,14 @@ export default function MyInvites() {
                 <p><strong>Date:</strong> {invite.events?.event_date || "Not set"}</p>
                 <p><strong>Time:</strong> {invite.events?.event_time || "Not set"}</p>
                 <p><strong>Location:</strong> {invite.events?.location || "Not set"}</p>
-                <p><strong>Your RSVP:</strong> {invite.attending ? "Attending" : "Not Attending"}</p>
+                <p>
+                  <strong>Your RSVP:</strong>{" "}
+                  {{
+                    yes: "Attending",
+                    maybe: "Maybe",
+                    no: "Not Attending",
+                  }[invite.attending] || "Not Attending"}
+                </p>
 
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                   <button
@@ -98,7 +105,7 @@ export default function MyInvites() {
                   </button>
 
                   <button
-                    onClick={() => navigate(`/edit/rsvp/${invite.edit_token}`)}
+                    onClick={() => navigate(`/rsvp/edit/${invite.edit_token}`)}
                     style={ghostButton}
                   >
                     Edit RSVP

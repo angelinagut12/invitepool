@@ -20,6 +20,8 @@ function EditRsvp() {
     email: "",
     phone: "",
     attending: "yes",
+    adults: 1,
+    children: 0,
     guestCount: 1,
     message: "",
     smsOptIn: false,
@@ -42,6 +44,8 @@ function EditRsvp() {
           email,
           phone,
           attending,
+          adults,
+          children,
           guest_count,
           message,
           sms_opt_in,
@@ -66,7 +70,9 @@ function EditRsvp() {
         guestName: data.guest_name || "",
         email: data.email || "",
         phone: data.phone || "",
-        attending: data.attending ? "yes" : "no",
+        attending: normalizeRsvpStatus(data.attending),
+        adults: data.adults ?? Math.max(Number(data.guest_count || 1), 1),
+        children: data.children ?? 0,
         guestCount: data.guest_count || 1,
         message: data.message || "",
         smsOptIn: data.sms_opt_in || false,
@@ -77,6 +83,12 @@ function EditRsvp() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function normalizeRsvpStatus(value) {
+    if (value === true || value === "true" || value === "yes") return "yes";
+    if (value === "maybe") return "maybe";
+    return "no";
   }
 
   function handleRsvpChange(e) {
@@ -99,6 +111,14 @@ function EditRsvp() {
 
     try {
       const trimmedEmail = rsvpData.email.trim().toLowerCase();
+      const adults = Number(rsvpData.adults || 0);
+      const children = Number(rsvpData.children || 0);
+
+      if (adults + children < 1) {
+        setRsvpError("Please select at least 1 adult or child.");
+        setSaving(false);
+        return;
+      }
 
       const { error } = await supabase
         .from("rsvps")
@@ -106,8 +126,10 @@ function EditRsvp() {
           guest_name: rsvpData.guestName,
           email: trimmedEmail,
           phone: rsvpData.phone?.trim() || null,
-          attending: rsvpData.attending === "yes",
-          guest_count: Number(rsvpData.guestCount),
+          attending: rsvpData.attending,
+          adults,
+          children,
+          guest_count: adults + children,
           message: rsvpData.message,
           sms_opt_in: rsvpData.smsOptIn,
           sms_opt_in_at: rsvpData.smsOptIn ? new Date().toISOString() : null,
@@ -283,18 +305,20 @@ function EditRsvp() {
                 }}
               >
                 <option value="yes">Yes</option>
+                <option value="maybe">Maybe</option>
                 <option value="no">No</option>
               </select>
             </div>
 
             <div>
-              <label>Message</label>
+              <label>Adults</label>
               <br />
-              <textarea
-                name="message"
-                value={rsvpData.message}
+              <input
+                type="number"
+                name="adults"
+                min="0"
+                value={rsvpData.adults}
                 onChange={handleRsvpChange}
-                rows="4"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -305,14 +329,35 @@ function EditRsvp() {
             </div>
 
             <div>
-              <label>How many people are included in this RSVP?</label>
+              <label>Kids</label>
               <br />
               <input
                 type="number"
-                name="guestCount"
-                min="1"
-                value={rsvpData.guestCount}
+                name="children"
+                min="0"
+                value={rsvpData.children}
                 onChange={handleRsvpChange}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "6px",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <p style={{ margin: 0, color: "#666" }}>
+              Total guests: {Number(rsvpData.adults || 0) + Number(rsvpData.children || 0)}
+            </p>
+
+            <div>
+              <label>Message</label>
+              <br />
+              <textarea
+                name="message"
+                value={rsvpData.message}
+                onChange={handleRsvpChange}
+                rows="4"
                 style={{
                   width: "100%",
                   padding: "12px",
